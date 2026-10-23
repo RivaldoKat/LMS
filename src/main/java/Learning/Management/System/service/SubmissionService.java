@@ -1,5 +1,6 @@
 package Learning.Management.System.service;
 
+import Learning.Management.System.dto.GradeRequestDTO;
 import Learning.Management.System.dto.SubmissionRequestDTO;
 import Learning.Management.System.dto.SubmissionResponseDTO;
 import Learning.Management.System.model.Assignment;
@@ -62,6 +63,19 @@ public class SubmissionService {
                 .feedback(submission.getFeedback())
                 .status(submission.getStatus())
                 .build();
+    }
+
+    public SubmissionResponseDTO gradeSubmission(Long submissionId, GradeRequestDTO dto) {
+        Submission submission = submissionRepo.findById(submissionId)
+                .orElseThrow(() -> new RuntimeException("Submission not found"));
+
+        submission.setGrade(dto.getGrade());
+        submission.setFeedback(dto.getFeedback());
+        submission.setStatus(SubmissionStatus.SUBMITTED);
+
+        Submission updated = submissionRepo.save(submission);
+        return
+                mapToDTO(updated);
     }
 
 }
