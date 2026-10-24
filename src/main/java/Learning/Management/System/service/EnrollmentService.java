@@ -8,6 +8,7 @@ import Learning.Management.System.model.User;
 import Learning.Management.System.repository.CourseRepo;
 import Learning.Management.System.repository.EnrollmentRepo;
 import Learning.Management.System.repository.UserRepo;
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -16,6 +17,7 @@ import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
+@Transactional
 public class EnrollmentService {
     
     private final EnrollmentRepo enrollmentRepo;

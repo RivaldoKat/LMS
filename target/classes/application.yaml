@@ -18,3 +18,7 @@ spring:
 
 server:
   port: 8080
+
+jwt:
+  secret: "this_is_a_very_secure_and_long_secret_key_for_jwt_signing_2026!"
+  expiration: 86400000 # 24 hours in milliseconds

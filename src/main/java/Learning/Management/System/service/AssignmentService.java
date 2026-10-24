@@ -6,6 +6,7 @@ import Learning.Management.System.model.Assignment;
 import Learning.Management.System.model.Course;
 import Learning.Management.System.repository.AssignmentRepo;
 import Learning.Management.System.repository.CourseRepo;
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -14,6 +15,7 @@ import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
+@Transactional
 public class AssignmentService {
 
     private final AssignmentRepo assignmentRepo;

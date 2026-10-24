@@ -4,6 +4,7 @@ package Learning.Management.System.controller;
 import Learning.Management.System.dto.CourseResponseDTO;
 import Learning.Management.System.repository.CourseRepo;
 import Learning.Management.System.service.CourseService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -28,7 +29,7 @@ public class CourseController {
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<CourseResponseDTO> getCourseById(@PathVariable Long id) {
+    public ResponseEntity<CourseResponseDTO> getCourseById(@Valid @PathVariable Long id) {
         CourseResponseDTO course = courseService.getCourseById(id);
         if(course == null) {
             return

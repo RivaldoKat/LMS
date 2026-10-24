@@ -10,6 +10,7 @@ import Learning.Management.System.model.User;
 import Learning.Management.System.repository.AssignmentRepo;
 import Learning.Management.System.repository.SubmissionRepo;
 import Learning.Management.System.repository.UserRepo;
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -18,6 +19,7 @@ import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
+@Transactional
 public class SubmissionService {
 
     private final SubmissionRepo submissionRepo;

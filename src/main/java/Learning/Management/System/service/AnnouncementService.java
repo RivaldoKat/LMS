@@ -6,7 +6,8 @@ import Learning.Management.System.model.Announcement;
 import Learning.Management.System.model.User;
 import Learning.Management.System.repository.AnnouncementRepo;
 import Learning.Management.System.repository.UserRepo;
-import lombok.AllArgsConstructor;
+
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -15,6 +16,7 @@ import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
+@Transactional
 public class AnnouncementService {
 
     private final AnnouncementRepo announcementRepo;

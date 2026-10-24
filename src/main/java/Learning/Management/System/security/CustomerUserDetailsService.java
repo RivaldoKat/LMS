@@ -7,6 +7,7 @@ import org.jspecify.annotations.Nullable;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.userdetails.UserDetailsPasswordService;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
@@ -17,7 +18,7 @@ import java.util.List;
 
 @Service
 @RequiredArgsConstructor
-public class CustomerUserDetailsService implements UserDetailsService {
+public class CustomerUserDetailsService implements UserDetailsService, UserDetailsPasswordService {
 
     private final UserRepo userRepo;
 
@@ -45,5 +46,10 @@ public class CustomerUserDetailsService implements UserDetailsService {
 
     public String getUsername() {
         return "";
+    }
+
+    @Override
+    public UserDetails updatePassword(UserDetails user, @Nullable String newPassword) {
+        return null;
     }
 }
