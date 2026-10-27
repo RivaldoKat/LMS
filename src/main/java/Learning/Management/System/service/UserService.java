@@ -8,6 +8,8 @@ import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.web.server.ResponseStatusException;
+import org.springframework.http.HttpStatus;
 
 import java.util.List;
 
@@ -34,7 +36,7 @@ public class UserService {
 
     public UserResponseDTO registerUser(UserRegistrationDTO dto) {
         if(userRepo.findByEmail(dto.getEmail()).isPresent()) {
-            throw new RuntimeException("Email is already in use");
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "Email is already in use");
         }
 
         User user = User.builder()

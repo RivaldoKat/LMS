@@ -1,19 +1,15 @@
 package Learning.Management.System.controller;
 
-
+import Learning.Management.System.dto.CourseRequestDTO;
 import Learning.Management.System.dto.CourseResponseDTO;
-import Learning.Management.System.repository.CourseRepo;
 import Learning.Management.System.service.CourseService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("api/courses")
@@ -24,18 +20,30 @@ public class CourseController {
 
     @GetMapping
     public ResponseEntity<List<CourseResponseDTO>> getAllCourses() {
-        return
-                ResponseEntity.ok(courseService.getAllCourses());
+        return ResponseEntity.ok(courseService.getAllCourses());
     }
 
     @GetMapping("/{id}")
     public ResponseEntity<CourseResponseDTO> getCourseById(@Valid @PathVariable Long id) {
-        CourseResponseDTO course = courseService.getCourseById(id);
-        if(course == null) {
-            return
-                    ResponseEntity.notFound().build();
-        }
-        return
-                ResponseEntity.ok(course);
+        return ResponseEntity.ok(courseService.getCourseById(id));
+    }
+
+    @PreAuthorize("hasRole('ADMIN')")
+    @PostMapping
+    public ResponseEntity<CourseResponseDTO> createCourse(@Valid @RequestBody CourseRequestDTO dto) {
+        return ResponseEntity.ok(courseService.createCourse(dto));
+    }
+
+    @PreAuthorize("hasRole('ADMIN')")
+    @PutMapping("/{id}")
+    public ResponseEntity<CourseResponseDTO> updateCourse(@PathVariable Long id, @Valid @RequestBody CourseRequestDTO dto) {
+        return ResponseEntity.ok(courseService.updateCourse(id, dto));
+    }
+
+    @PreAuthorize("hasRole('ADMIN')")
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> deleteCourse(@PathVariable Long id) {
+        courseService.deleteCourse(id);
+        return ResponseEntity.noContent().build();
     }
 }

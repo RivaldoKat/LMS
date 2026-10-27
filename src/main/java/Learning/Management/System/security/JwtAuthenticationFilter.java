@@ -3,18 +3,24 @@ package Learning.Management.System.security;
 import jakarta.servlet.*;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import io.jsonwebtoken.JwtException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
 import org.springframework.stereotype.Component;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 
 @Component
 @RequiredArgsConstructor
 public class JwtAuthenticationFilter implements Filter {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(JwtAuthenticationFilter.class);
 
     private final JwtUtils jwtUtils;
     private final CustomerUserDetailsService userDetailsService;
@@ -50,8 +56,8 @@ public class JwtAuthenticationFilter implements Filter {
                     SecurityContextHolder.getContext().setAuthentication(authToken);
                 }
             }
-        } catch (Exception e) {
-            // Token extraction or validation failed; proceed without authentication context
+        } catch (JwtException | UsernameNotFoundException e) {
+            LOGGER.debug("Ignoring invalid bearer token ({})", e.getClass().getSimpleName());
         }
 
         chain.doFilter(httpRequest, httpResponse);

@@ -8,14 +8,16 @@ import Learning.Management.System.service.UserService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
 
 @RestController
-@RequestMapping("api/users")
+@RequestMapping("/api/users")
 @RequiredArgsConstructor
+@PreAuthorize("hasRole('ADMIN')")
 public class UserController {
 
     private final UserService userService;
@@ -28,5 +30,10 @@ public class UserController {
     @PostMapping
     public ResponseEntity<UserResponseDTO> registerUser(@Valid @RequestBody UserRegistrationDTO dto) {
         return ResponseEntity.ok(userService.registerUser(dto));
+    }
+
+    @PostMapping("/register")
+    public ResponseEntity<UserResponseDTO> registerUserLegacy(@Valid @RequestBody UserRegistrationDTO dto) {
+        return registerUser(dto);
     }
 }

@@ -3,11 +3,13 @@ package Learning.Management.System.service;
 import Learning.Management.System.dto.AttendanceRequestDTO;
 import Learning.Management.System.dto.AttendanceResponseDTO;
 import Learning.Management.System.model.Attendance;
+import Learning.Management.System.model.AttendanceStatus;
 import Learning.Management.System.model.Course;
 import Learning.Management.System.model.User;
 import Learning.Management.System.repository.AttendanceRepo;
 import Learning.Management.System.repository.CourseRepo;
 import Learning.Management.System.repository.UserRepo;
+import jakarta.persistence.EntityNotFoundException;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -30,11 +32,17 @@ public class AttendanceService {
                 .collect(Collectors.toList());
     }
 
+    public AttendanceResponseDTO getAttendanceById(Long id) {
+        Attendance attendance = attendanceRepo.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("Attendance not found with id: " + id));
+        return mapToDTO(attendance);
+    }
+
     public AttendanceResponseDTO recordAttendance(AttendanceRequestDTO dto) {
         Course course = courseRepo.findById(dto.getCourseId())
-                .orElseThrow(() -> new RuntimeException("Course not found"));
-        User student = userRepo.findById(dto.getCourseId())
-                .orElseThrow(() -> new RuntimeException("Student not found"));
+                .orElseThrow(() -> new EntityNotFoundException("Course not found"));
+        User student = userRepo.findById(dto.getStudentId())
+                .orElseThrow(() -> new EntityNotFoundException("Student not found"));
 
         Attendance attendance = Attendance.builder()
                 .course(course)
@@ -47,6 +55,38 @@ public class AttendanceService {
 
         return mapToDTO(record);
 
+    }
+
+    public AttendanceResponseDTO updateAttendance(Long id, AttendanceRequestDTO dto) {
+
+       Attendance attendance = attendanceRepo.findById(id)
+               .orElseThrow(() -> new EntityNotFoundException("Attendance not found with id: " + id));
+
+       attendance.setStatus(dto.getStatus());
+       if (dto.getCourseId() != null) {
+           Course course = courseRepo.findById(dto.getCourseId())
+                   .orElseThrow(() -> new EntityNotFoundException("Course not found"));
+           attendance.setCourse(course);
+       }
+       if (dto.getStudentId() != null) {
+           User student = userRepo.findById(dto.getStudentId())
+                   .orElseThrow(() -> new EntityNotFoundException("Student not found"));
+           attendance.setStudent(student);
+       }
+       if (dto.getDate() != null) {
+           attendance.setDate(dto.getDate());
+       }
+
+       Attendance saved = attendanceRepo.save(attendance);
+
+       return mapToDTO(saved);
+
+    }
+
+    public void deleteAttendance(Long id) {
+        Attendance attendance = attendanceRepo.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("Attendance not found with id: " + id));
+        attendanceRepo.delete(attendance);
     }
 
     public AttendanceResponseDTO mapToDTO(Attendance dto) {

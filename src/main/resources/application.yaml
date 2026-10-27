@@ -2,23 +2,27 @@ spring:
   application:
     name: System
   datasource:
-    url: jdbc:h2:mem:school_db
-    driver-class-name: org.h2.Driver
-    username: sa
-    password: password
+    url: ${DATABASE_URL:jdbc:h2:mem:school_db}
+    username: ${DATABASE_USERNAME:sa}
+    password: ${DATABASE_PASSWORD:}
   h2:
     console:
-      enable: true
+      enabled: ${H2_CONSOLE_ENABLED:true}
       path: /h2-console
   jpa:
-    database-platform: org.hibernate.dialect.H2Dialect
     hibernate:
-      format_sql: true
-    show-sql: true
+      format_sql: false
+      ddl-auto: validate
+    show-sql: false
 
 server:
   port: 8080
 
 jwt:
-  secret: "this_is_a_very_secure_and_long_secret_key_for_jwt_signing_2026!"
-  expiration: 86400000 # 24 hours in milliseconds
+  secret: ${JWT_SECRET:}
+  expiration: ${JWT_EXPIRATION:86400000}
+
+lms:
+  bootstrap-admin:
+    email: ${LMS_ADMIN_EMAIL:}
+    password: ${LMS_ADMIN_PASSWORD:}

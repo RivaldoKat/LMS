@@ -10,5 +10,5 @@ import java.util.List;
 @Repository
 public interface SubmissionRepo extends JpaRepository<Submission, Long> {
 
-    List<Submission> findStudentById(Long studentId);
+    List<Submission> findByStudentId(Long studentId);
 }

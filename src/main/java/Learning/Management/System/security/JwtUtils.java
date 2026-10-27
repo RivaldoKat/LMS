@@ -6,6 +6,7 @@ import io.jsonwebtoken.security.Keys;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Component;
+import jakarta.annotation.PostConstruct;
 
 import javax.crypto.SecretKey;
 import java.nio.charset.StandardCharsets;
@@ -19,6 +20,16 @@ public class JwtUtils {
 
     @Value("${jwt.expiration}")
     private long EXPIRATION_TIME;
+
+    @PostConstruct
+    void validateConfiguration() {
+        if (SECRET_KEY == null || SECRET_KEY.getBytes(StandardCharsets.UTF_8).length < 32) {
+            throw new IllegalStateException("JWT_SECRET must contain at least 32 bytes");
+        }
+        if (EXPIRATION_TIME <= 0) {
+            throw new IllegalStateException("JWT_EXPIRATION must be a positive number of milliseconds");
+        }
+    }
 
     private SecretKey getSignKey() {
         return Keys.hmacShaKeyFor(SECRET_KEY.getBytes(StandardCharsets.UTF_8));

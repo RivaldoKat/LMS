@@ -6,6 +6,7 @@ import Learning.Management.System.model.User;
 import Learning.Management.System.repository.UserRepo;
 import Learning.Management.System.security.CustomerUserDetailsService;
 import Learning.Management.System.security.JwtUtils;
+import jakarta.persistence.EntityNotFoundException;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -32,7 +33,8 @@ public class AuthController {
 
         var userDetails = userDetailsService.loadUserByUsername(request.getEmail());
         var jwtToken = jwtUtils.generateToken(userDetails);
-        User user = userRepo.findByEmail(request.getEmail()).orElseThrow();
+        User user = userRepo.findByEmail(request.getEmail())
+                .orElseThrow(() -> new EntityNotFoundException("Authenticated user was not found"));
 
         return ResponseEntity.ok(LoginResponseDTO.builder()
                 .token(jwtToken)
