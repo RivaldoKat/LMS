@@ -11,12 +11,11 @@ A Spring Boot REST API for a single-school Learning Management System, designed 
 
 ## Configuration
 
-- `JWT_SECRET` is required and must contain at least 32 bytes. Never use a committed or publicly known signing key.
+- `JWT_SECRET` is required and must contain at least 32 bytes.
 - `LMS_ADMIN_EMAIL` and `LMS_ADMIN_PASSWORD` bootstrap the initial admin when no admin exists. Both must be set together. The password is stored with BCrypt.
 - By default, the app uses an ephemeral H2 database for local development. Set `DATABASE_URL`, `DATABASE_USERNAME`, and `DATABASE_PASSWORD` to use PostgreSQL. Flyway manages schema migrations and Hibernate validates the schema at startup.
 - The H2 console is disabled by default; only enable `H2_CONSOLE_ENABLED` in a trusted local environment.
 
-The default H2 database resets on restart. Do not use it for production data.
 
 ## Tech Stack
 - **Language:** Java 27
