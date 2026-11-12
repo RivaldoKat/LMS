@@ -3,10 +3,10 @@ package Learning.Management.System.service;
 import Learning.Management.System.dto.GradeRequestDTO;
 import Learning.Management.System.dto.SubmissionRequestDTO;
 import Learning.Management.System.dto.SubmissionResponseDTO;
-import Learning.Management.System.model.Assignment;
-import Learning.Management.System.model.Submission;
-import Learning.Management.System.model.SubmissionStatus;
-import Learning.Management.System.model.User;
+import Learning.Management.System.entity.Assignment;
+import Learning.Management.System.entity.Submission;
+import Learning.Management.System.entity.SubmissionStatus;
+import Learning.Management.System.entity.User;
 import Learning.Management.System.repository.AssignmentRepo;
 import Learning.Management.System.repository.SubmissionRepo;
 import Learning.Management.System.repository.UserRepo;
@@ -171,6 +171,6 @@ public class SubmissionService {
     }
 
     private boolean isTeacherUser(User user) {
-        return user.getRole() == Learning.Management.System.model.Role.TEACHER;
+        return user.getRole() == Learning.Management.System.entity.Role.TEACHER;
     }
 }

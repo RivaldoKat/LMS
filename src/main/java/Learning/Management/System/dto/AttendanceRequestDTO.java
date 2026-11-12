@@ -1,6 +1,6 @@
 package Learning.Management.System.dto;
 
-import Learning.Management.System.model.AttendanceStatus;
+import Learning.Management.System.entity.AttendanceStatus;
 import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 

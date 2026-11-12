@@ -1,6 +1,6 @@
 package Learning.Management.System.security;
 
-import Learning.Management.System.model.User;
+import Learning.Management.System.entity.User;
 import Learning.Management.System.repository.UserRepo;
 import lombok.RequiredArgsConstructor;
 import org.jspecify.annotations.Nullable;

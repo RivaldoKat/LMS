@@ -2,9 +2,9 @@ package Learning.Management.System.service;
 
 import Learning.Management.System.dto.EnrollmentRequestDTO;
 import Learning.Management.System.dto.EnrollmentResponseDTO;
-import Learning.Management.System.model.Course;
-import Learning.Management.System.model.Enrollment;
-import Learning.Management.System.model.User;
+import Learning.Management.System.entity.Course;
+import Learning.Management.System.entity.Enrollment;
+import Learning.Management.System.entity.User;
 import Learning.Management.System.repository.CourseRepo;
 import Learning.Management.System.repository.EnrollmentRepo;
 import Learning.Management.System.repository.UserRepo;
@@ -81,6 +81,7 @@ public class EnrollmentService {
                 .studentId(enrollment.getStudent().getId())
                 .courseName(enrollment.getCourse().getName())
                 .studentName(enrollment.getStudent().toString())
+                .grade(enrollment.getGrade())
                 .enrollmentAt(enrollment.getEnrolledAt())
                 .build();
     }

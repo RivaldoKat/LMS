@@ -3,15 +3,19 @@ package Learning.Management.System.controller;
 import Learning.Management.System.dto.GradeRequestDTO;
 import Learning.Management.System.dto.SubmissionRequestDTO;
 import Learning.Management.System.dto.SubmissionResponseDTO;
+import Learning.Management.System.service.FileStorageService;
 import Learning.Management.System.service.SubmissionService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequiredArgsConstructor
@@ -19,6 +23,7 @@ import java.util.List;
 public class SubmissionController {
 
     private final SubmissionService submissionService;
+    private final FileStorageService fileStorageService;
 
     @GetMapping("student/{studentId}")
     public ResponseEntity<List<SubmissionResponseDTO>> getSubmissionsByStudent(
@@ -37,6 +42,14 @@ public class SubmissionController {
     public ResponseEntity<SubmissionResponseDTO> submitAssignment(
             @Valid @RequestBody SubmissionRequestDTO dto, Authentication authentication) {
         return ResponseEntity.ok(submissionService.submitAssignment(dto, authentication));
+    }
+
+    @PreAuthorize("hasAnyRole('LEARNER', 'TEACHER')")
+    @PostMapping(value = "/uploads", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<Map<String, String>> uploadAssignmentFile(
+            @RequestParam("file") MultipartFile file) {
+        String storedFilename = fileStorageService.store(file);
+        return ResponseEntity.ok(Map.of("fileUrl", "/files/" + storedFilename));
     }
 
     @PreAuthorize("hasRole('LEARNER')")

@@ -2,8 +2,8 @@ package Learning.Management.System.service;
 
 import Learning.Management.System.dto.AssignmentRequestDTO;
 import Learning.Management.System.dto.AssignmentResponseDTO;
-import Learning.Management.System.model.Assignment;
-import Learning.Management.System.model.Course;
+import Learning.Management.System.entity.Assignment;
+import Learning.Management.System.entity.Course;
 import Learning.Management.System.repository.AssignmentRepo;
 import Learning.Management.System.repository.CourseRepo;
 import jakarta.persistence.EntityNotFoundException;

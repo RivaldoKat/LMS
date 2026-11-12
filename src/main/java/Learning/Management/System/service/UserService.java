@@ -2,7 +2,7 @@ package Learning.Management.System.service;
 
 import Learning.Management.System.dto.UserRegistrationDTO;
 import Learning.Management.System.dto.UserResponseDTO;
-import Learning.Management.System.model.User;
+import Learning.Management.System.entity.User;
 import Learning.Management.System.repository.UserRepo;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;

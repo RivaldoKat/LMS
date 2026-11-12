@@ -11,9 +11,9 @@ spring:
       path: /h2-console
   jpa:
     hibernate:
-      format_sql: false
+      format_sql: true
       ddl-auto: validate
-    show-sql: false
+    show-sql: true
 
 server:
   port: 8080

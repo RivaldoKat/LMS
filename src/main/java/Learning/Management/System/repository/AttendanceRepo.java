@@ -1,6 +1,6 @@
 package Learning.Management.System.repository;
 
-import Learning.Management.System.model.Attendance;
+import Learning.Management.System.entity.Attendance;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.List;

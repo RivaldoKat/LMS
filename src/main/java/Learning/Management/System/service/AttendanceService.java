@@ -2,10 +2,9 @@ package Learning.Management.System.service;
 
 import Learning.Management.System.dto.AttendanceRequestDTO;
 import Learning.Management.System.dto.AttendanceResponseDTO;
-import Learning.Management.System.model.Attendance;
-import Learning.Management.System.model.AttendanceStatus;
-import Learning.Management.System.model.Course;
-import Learning.Management.System.model.User;
+import Learning.Management.System.entity.Attendance;
+import Learning.Management.System.entity.Course;
+import Learning.Management.System.entity.User;
 import Learning.Management.System.repository.AttendanceRepo;
 import Learning.Management.System.repository.CourseRepo;
 import Learning.Management.System.repository.UserRepo;

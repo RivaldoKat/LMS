@@ -1,5 +1,6 @@
 package Learning.Management.System.dto;
 
+import Learning.Management.System.entity.SchoolTerm;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import lombok.Data;
@@ -17,6 +18,9 @@ public class CourseRequestDTO {
 
     @NotBlank(message = "Term is required")
     private String term;
+
+    @NotBlank(message = "Required")
+    private SchoolTerm schoolTerm;
 
     @NotNull(message = "Teacher ID is required")
     private Long teacherId;

@@ -1,7 +1,6 @@
 package Learning.Management.System.repository;
 
-import Learning.Management.System.dto.SubmissionResponseDTO;
-import Learning.Management.System.model.Submission;
+import Learning.Management.System.entity.Submission;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 

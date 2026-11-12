@@ -1,6 +1,6 @@
 package Learning.Management.System.dto;
 
-import Learning.Management.System.model.Role;
+import Learning.Management.System.entity.Role;
 import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 

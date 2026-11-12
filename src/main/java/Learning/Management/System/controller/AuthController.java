@@ -2,7 +2,7 @@ package Learning.Management.System.controller;
 
 import Learning.Management.System.dto.LoginRequestDTO;
 import Learning.Management.System.dto.LoginResponseDTO;
-import Learning.Management.System.model.User;
+import Learning.Management.System.entity.User;
 import Learning.Management.System.repository.UserRepo;
 import Learning.Management.System.security.CustomerUserDetailsService;
 import Learning.Management.System.security.JwtUtils;

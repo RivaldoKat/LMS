@@ -1,6 +1,6 @@
 package Learning.Management.System.dto;
 
-import Learning.Management.System.model.Role;
+import Learning.Management.System.entity.Role;
 import lombok.Builder;
 import lombok.Data;
 

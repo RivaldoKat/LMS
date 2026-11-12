@@ -1,6 +1,6 @@
 package Learning.Management.System.dto;
 
-import Learning.Management.System.model.SubmissionStatus;
+import Learning.Management.System.entity.SubmissionStatus;
 import lombok.Builder;
 import lombok.Data;
 

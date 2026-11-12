@@ -2,8 +2,8 @@ package Learning.Management.System.service;
 
 import Learning.Management.System.dto.AnnouncementRequestDTO;
 import Learning.Management.System.dto.AnnouncementResponseDTO;
-import Learning.Management.System.model.Announcement;
-import Learning.Management.System.model.User;
+import Learning.Management.System.entity.Announcement;
+import Learning.Management.System.entity.User;
 import Learning.Management.System.repository.AnnouncementRepo;
 import Learning.Management.System.repository.UserRepo;
 

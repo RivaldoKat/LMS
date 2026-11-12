@@ -1,7 +1,7 @@
 package Learning.Management.System.config;
 
-import Learning.Management.System.model.Role;
-import Learning.Management.System.model.User;
+import Learning.Management.System.entity.Role;
+import Learning.Management.System.entity.User;
 import Learning.Management.System.repository.UserRepo;
 import lombok.RequiredArgsConstructor;
 import org.springframework.boot.CommandLineRunner;

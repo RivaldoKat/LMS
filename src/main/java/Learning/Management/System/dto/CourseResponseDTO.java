@@ -1,5 +1,6 @@
 package Learning.Management.System.dto;
 
+import Learning.Management.System.entity.SchoolTerm;
 import lombok.Builder;
 import lombok.Data;
 
@@ -11,5 +12,6 @@ public class CourseResponseDTO {
     private String code;
     private String description;
     private String term;
+    private SchoolTerm schoolTerm;
     private String teacherName;
 }

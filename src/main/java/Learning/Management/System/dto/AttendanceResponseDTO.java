@@ -1,6 +1,6 @@
 package Learning.Management.System.dto;
 
-import Learning.Management.System.model.AttendanceStatus;
+import Learning.Management.System.entity.AttendanceStatus;
 import lombok.Builder;
 import lombok.Data;
 import java.time.LocalDate;

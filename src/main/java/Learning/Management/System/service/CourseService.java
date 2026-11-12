@@ -2,8 +2,8 @@ package Learning.Management.System.service;
 
 import Learning.Management.System.dto.CourseRequestDTO;
 import Learning.Management.System.dto.CourseResponseDTO;
-import Learning.Management.System.model.Course;
-import Learning.Management.System.model.User;
+import Learning.Management.System.entity.Course;
+import Learning.Management.System.entity.User;
 import Learning.Management.System.repository.CourseRepo;
 import Learning.Management.System.repository.UserRepo;
 import jakarta.persistence.EntityNotFoundException;
@@ -60,6 +60,7 @@ public class CourseService {
         course.setCode(dto.getCode());
         course.setDescription(dto.getDescription());
         course.setTerm(dto.getTerm());
+        course.setSchoolTerm(dto.getSchoolTerm());
         course.setTeacher(teacher);
 
         return mapToDTO(courseRepo.save(course));
@@ -79,6 +80,7 @@ public class CourseService {
                 .code(course.getCode())
                 .description(course.getDescription())
                 .term(course.getTerm())
+                .schoolTerm(course.getSchoolTerm())
                 .teacherName(course.getTeacher() != null ? course.getTeacher().toString() : null)
                 .build();
     }

@@ -1,6 +1,6 @@
 package Learning.Management.System.repository;
 
-import Learning.Management.System.model.Enrollment;
+import Learning.Management.System.entity.Enrollment;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
