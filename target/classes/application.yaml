@@ -1,0 +1,28 @@
+spring:
+  application:
+    name: System
+  datasource:
+    url: ${DATABASE_URL:jdbc:h2:mem:school_db}
+    username: ${DATABASE_USERNAME:sa}
+    password: ${DATABASE_PASSWORD:}
+  h2:
+    console:
+      enabled: ${H2_CONSOLE_ENABLED:true}
+      path: /h2-console
+  jpa:
+    hibernate:
+      format_sql: true
+      ddl-auto: validate
+    show-sql: true
+
+server:
+  port: 8080
+
+jwt:
+  secret: ${JWT_SECRET:}
+  expiration: ${JWT_EXPIRATION:86400000}
+
+lms:
+  bootstrap-admin:
+    email: ${LMS_ADMIN_EMAIL:}
+    password: ${LMS_ADMIN_PASSWORD:}
