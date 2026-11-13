@@ -6,6 +6,8 @@ import Learning.Management.System.entity.User;
 import Learning.Management.System.repository.UserRepo;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
@@ -21,8 +23,8 @@ public class UserService {
     private final UserRepo userRepo;
     private final PasswordEncoder passwordEncoder;
 
-    public List<UserResponseDTO> getAllUsers() {
-        return userRepo.findAll().stream()
+    public Page<UserResponseDTO> getAllUsers(Pageable pageable) {
+        return userRepo.findAll(pageable)
                 .map(user -> UserResponseDTO.builder()
                         .id(user.getId())
                         .email(user.getEmail())
@@ -30,8 +32,7 @@ public class UserService {
                         .lastName(user.getLastName())
                         .role(user.getRole())
                         .createdAt(user.getCreatedAt())
-                        .build())
-                .toList();
+                        .build());
     }
 
     public UserResponseDTO registerUser(UserRegistrationDTO dto) {

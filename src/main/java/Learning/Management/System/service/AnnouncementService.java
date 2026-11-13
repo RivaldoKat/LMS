@@ -10,6 +10,8 @@ import Learning.Management.System.repository.UserRepo;
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -23,10 +25,9 @@ public class AnnouncementService {
     private final AnnouncementRepo announcementRepo;
     private final UserRepo userRepo;
 
-    public List<AnnouncementResponseDTO> getAllAnnouncement() {
-        return announcementRepo.findAll().stream()
-                .map(this::mapToDTO)
-                .collect(Collectors.toList());
+    public Page<AnnouncementResponseDTO> getAllAnnouncement(Pageable pageable) {
+        return announcementRepo.findAll(pageable)
+                .map(this::mapToDTO);
     }
 
     public AnnouncementResponseDTO getAnnouncementById(Long id) {

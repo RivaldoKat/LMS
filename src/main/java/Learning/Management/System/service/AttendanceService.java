@@ -11,6 +11,8 @@ import Learning.Management.System.repository.UserRepo;
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -25,10 +27,9 @@ public class AttendanceService {
     private final CourseRepo courseRepo;
     private final UserRepo userRepo;
 
-    public List<AttendanceResponseDTO> getAttendanceByCourse(Long courseId) {
-        return attendanceRepo.findByCourseId(courseId).stream()
-                .map(this::mapToDTO)
-                .collect(Collectors.toList());
+    public Page<AttendanceResponseDTO> getAttendanceByCourse(Long courseId, Pageable page) {
+        return attendanceRepo.findByCourseId(courseId, page)
+                .map(this::mapToDTO);
     }
 
     public AttendanceResponseDTO getAttendanceById(Long id) {

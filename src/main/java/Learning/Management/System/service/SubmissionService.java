@@ -13,12 +13,11 @@ import Learning.Management.System.repository.UserRepo;
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
-
-import java.util.List;
-import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -29,21 +28,19 @@ public class SubmissionService {
     private final AssignmentRepo assignmentRepo;
     private final UserRepo userRepo;
 
-    public List<SubmissionResponseDTO> getSubmissionByStudent(Long studentId, Authentication authentication) {
+    public Page<SubmissionResponseDTO> getSubmissionByStudent(Long studentId, Pageable pageable, Authentication authentication) {
         User requester = getRequester(authentication);
         if (isAdmin(authentication)) {
-            return submissionRepo.findByStudentId(studentId).stream()
-                    .map(this::mapToDTO)
-                    .collect(Collectors.toList());
+            return submissionRepo.findByStudentId(studentId, pageable)
+                    .map(this::mapToDTO);
         }
         if (!isTeacher(authentication) && !requester.getId().equals(studentId)) {
             throw new AccessDeniedException("You can only view your own submissions");
         }
-        return submissionRepo.findByStudentId(studentId).stream()
-                .filter(submission -> !isTeacher(authentication)
-                        || isCourseTeacher(submission, requester))
-                .map(this::mapToDTO)
-                .collect(Collectors.toList());
+        Page<Submission> submissions = isTeacher(authentication)
+                ? submissionRepo.findByStudentIdAndAssignmentCourseTeacherId(studentId, requester.getId(), pageable)
+                : submissionRepo.findByStudentId(studentId, pageable);
+        return submissions.map(this::mapToDTO);
     }
 
     public SubmissionResponseDTO getSubmissionById(Long id, Authentication authentication) {

@@ -5,11 +5,13 @@ import Learning.Management.System.dto.CourseResponseDTO;
 import Learning.Management.System.service.CourseService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.List;
 
 @RestController
 @RequestMapping("api/courses")
@@ -19,8 +21,9 @@ public class CourseController {
     private final CourseService courseService;
 
     @GetMapping
-    public ResponseEntity<List<CourseResponseDTO>> getAllCourses() {
-        return ResponseEntity.ok(courseService.getAllCourses());
+    public Page<CourseResponseDTO> getAllCourses(
+            @PageableDefault(size = 10, sort = "name", direction = Sort.Direction.ASC) Pageable page) {
+        return courseService.getAllCourses(page);
     }
 
     @GetMapping("/{id}")
