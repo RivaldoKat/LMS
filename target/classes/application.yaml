@@ -2,27 +2,30 @@ spring:
   application:
     name: System
   datasource:
-    url: ${DATABASE_URL:jdbc:h2:mem:school_db}
-    username: ${DATABASE_USERNAME:sa}
-    password: ${DATABASE_PASSWORD:}
-  h2:
-    console:
-      enabled: ${H2_CONSOLE_ENABLED:true}
-      path: /h2-console
+    url: ${DB_URL:jdbc:postgresql://dpg-dbs6vsjbc2fs73aodn6g-a.frankfurt-postgres.render.com:5432/systems_3hiw?sslmode=require}
+    username: ${DB_USER:rivaldo}
+    password: ${DB_PASSWORD:}
+    driver-class-name: org.postgresql.Driver
   jpa:
     hibernate:
-      format_sql: true
       ddl-auto: validate
-    show-sql: true
-
+    show-sql: false
 server:
-  port: 8080
+  port: ${PORT:8080}
 
 jwt:
-  secret: ${JWT_SECRET:}
+  secret: ${JWT_SECRET}
   expiration: ${JWT_EXPIRATION:86400000}
 
 lms:
   bootstrap-admin:
     email: ${LMS_ADMIN_EMAIL:}
     password: ${LMS_ADMIN_PASSWORD:}
+  sample-data:
+    enabled: ${LMS_SAMPLE_DATA_ENABLED:false}
+    password: ${LMS_SAMPLE_DATA_PASSWORD:}
+  cors:
+    allowed-origins: ${LMS_CORS_ALLOWED_ORIGINS:http://localhost:9000,http://127.0.0.1:9000,http://localhost:5173}
+
+storage:
+  location: ${STORAGE_LOCATION:upload-dir}

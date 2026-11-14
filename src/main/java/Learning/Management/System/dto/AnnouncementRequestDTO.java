@@ -12,6 +12,5 @@ public class AnnouncementRequestDTO {
     @NotNull(message = "Content is required")
     private String content;
 
-    @NotNull(message = "Author ID is required")
-    private Long authorId;
+    private Long courseId;
 }

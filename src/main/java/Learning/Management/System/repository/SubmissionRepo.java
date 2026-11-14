@@ -13,4 +13,6 @@ public interface SubmissionRepo extends JpaRepository<Submission, Long> {
 
     Page<Submission> findByStudentIdAndAssignmentCourseTeacherId(
             Long studentId, Long teacherId, Pageable pageable);
+
+    boolean existsByStudentIdAndAssignmentId(Long studentId, Long assignmentId);
 }

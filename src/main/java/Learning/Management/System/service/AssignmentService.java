@@ -6,11 +6,15 @@ import Learning.Management.System.entity.Assignment;
 import Learning.Management.System.entity.Course;
 import Learning.Management.System.repository.AssignmentRepo;
 import Learning.Management.System.repository.CourseRepo;
+import Learning.Management.System.repository.EnrollmentRepo;
+import Learning.Management.System.repository.UserRepo;
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -23,16 +27,35 @@ public class AssignmentService {
 
     private final AssignmentRepo assignmentRepo;
     private final CourseRepo courseRepo;
+    private final EnrollmentRepo enrollmentRepo;
+    private final UserRepo userRepo;
 
-    public Page<AssignmentResponseDTO> getAssignmentsByCourse(Long courseId, Pageable page) {
+    public Page<AssignmentResponseDTO> getAllAssignments(Pageable page, Authentication authentication) {
+        Page<Assignment> assignments = isLearner(authentication)
+                ? assignmentRepo.findVisibleToLearner(getLearnerId(authentication), page)
+                : assignmentRepo.findAll(page);
+        return assignments.map(this::mapToDTO);
+    }
+
+    public Page<AssignmentResponseDTO> getAssignmentsByCourse(
+            Long courseId, Pageable page, Authentication authentication) {
+        requireEnrolledLearner(courseId, authentication);
         return assignmentRepo.findByCourseId(courseId, page)
                 .map(this::mapToDTO);
     }
 
-    public AssignmentResponseDTO getAssignmentById(Long id) {
+    public AssignmentResponseDTO getAssignmentById(Long id, Authentication authentication) {
         Assignment assignment = assignmentRepo.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Assignment not found with id: " + id));
+        requireEnrolledLearner(assignment.getCourse().getId(), authentication);
         return mapToDTO(assignment);
+    }
+
+    public long countAssignments(Authentication authentication) {
+        if (!isLearner(authentication)) {
+            return assignmentRepo.count();
+        }
+        return assignmentRepo.countVisibleToLearner(getLearnerId(authentication));
     }
 
     public AssignmentResponseDTO createAssignment(AssignmentRequestDTO dto) {
@@ -84,5 +107,23 @@ public class AssignmentService {
                 .dueDate(assignment.getDueDate())
                 .maxScore(assignment.getMaxScore())
                 .build();
+    }
+
+    private void requireEnrolledLearner(Long courseId, Authentication authentication) {
+        if (isLearner(authentication)
+                && !enrollmentRepo.existsByCourseIdAndStudentId(courseId, getLearnerId(authentication))) {
+            throw new AccessDeniedException("You can only view assignments for your enrolled courses");
+        }
+    }
+
+    private boolean isLearner(Authentication authentication) {
+        return authentication.getAuthorities().stream()
+                .anyMatch(authority -> authority.getAuthority().equals("ROLE_LEARNER"));
+    }
+
+    private Long getLearnerId(Authentication authentication) {
+        return userRepo.findByEmail(authentication.getName())
+                .orElseThrow(() -> new EntityNotFoundException("Authenticated user was not found"))
+                .getId();
     }
 }

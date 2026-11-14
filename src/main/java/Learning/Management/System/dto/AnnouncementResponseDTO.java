@@ -12,5 +12,7 @@ public class AnnouncementResponseDTO {
     private String title;
     private String content;
     private String authorName;
+    private Long courseId;
+    private String courseName;
     private LocalDateTime createdAt;
 }

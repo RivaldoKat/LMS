@@ -77,7 +77,8 @@ public class SubmissionService {
                 .assignmentTitle(submission.getAssignment().getTitle())
                 .studentId(submission.getStudent().getId())
                 .fileUrl(submission.getFileUrl())
-                .studentName(submission.getStudent().toString())
+                .studentName(submission.getStudent().getFirstName() + " "
+                        + submission.getStudent().getLastName())
                 .submittedAt(submission.getSubmittedAt())
                 .grade(submission.getGrade())
                 .feedback(submission.getFeedback())

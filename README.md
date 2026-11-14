@@ -6,21 +6,24 @@ A Spring Boot REST API for a single-school Learning Management System, designed 
 - **JWT & Stateless Security:** Secure authentication and role-based access control (RBAC) via Spring Security.
 - **Academic Management:** Course creation, student course enrollments, and term management.
 - **Assignments & Submissions:** Assignment publishing, student file uploads, and a comprehensive grading/feedback workflow.
-- **Attendance & Announcements:** Daily attendance tracking with status enums and school-wide announcement broadcasting.
+- **Attendance & Announcements:** Daily attendance tracking and announcements that can target a course or the whole school.
+- **Learner data scope:** Learners receive only their enrolled courses, assignments for those courses, and school-wide or enrolled-course announcements. Enrollment and attendance management is staff-only.
 - **Robust Error Handling:** Global exception handling (`@RestControllerAdvice`) and strict input validation (`@Valid`).
 
 ## Configuration
 
 - `JWT_SECRET` is required and must contain at least 32 bytes.
+- Browser clients are allowed from `http://localhost:9000`, `http://127.0.0.1:9000`, and `http://localhost:5173` by default. Set `LMS_CORS_ALLOWED_ORIGINS` to a comma-separated list of trusted frontend origins when deploying elsewhere.
 - `LMS_ADMIN_EMAIL` and `LMS_ADMIN_PASSWORD` bootstrap the initial admin when no admin exists. Both must be set together. The password is stored with BCrypt.
-- By default, the app uses an ephemeral H2 database for local development. Set `DATABASE_URL`, `DATABASE_USERNAME`, and `DATABASE_PASSWORD` to use PostgreSQL. Flyway manages schema migrations and Hibernate validates the schema at startup.
-- The H2 console is disabled by default; only enable `H2_CONSOLE_ENABLED` in a trusted local environment.
+- Optional sample records can be generated at startup by setting `LMS_SAMPLE_DATA_ENABLED=true` and `LMS_SAMPLE_DATA_PASSWORD` to a password for the demo accounts. This creates 120 learners, 15 teachers, 30 courses, 12 assignments per course, enrollments, attendance records, submissions, and announcements; repeated starts reuse those records. Demo accounts use `learner001@example.test` through `learner120@example.test` and `teacher001@example.test` through `teacher015@example.test`. Leave sample data disabled for production databases.
+- PostgreSQL uses the Render internal JDBC URL in `src/main/resources/application.yaml`; set `DB_USER` and `DB_PASSWORD` in the Render web service environment. Set `JWT_SECRET` to a value of at least 32 bytes. `PORT` is read from Render automatically and defaults to `8080` locally. Set `LMS_CORS_ALLOWED_ORIGINS` to the deployed frontend origin.
+- Sample data is disabled by default. To use uploaded files with a Render persistent disk, mount the disk (for example at `/var/data`) and set `STORAGE_LOCATION=/var/data/uploads`. Without a persistent disk, uploads on Render's local filesystem may be lost when the service restarts or redeploys.
 
 
 ## Tech Stack
 - **Language:** Java 27
 - **Framework:** Spring Boot (Web, Security, Data JPA, Validation, Actuator)
-- **Database:** H2 In-Memory Database (Easily configurable to PostgreSQL/MySQL)
+- **Database:** PostgreSQL (Render)
 - **Security:** JJWT (JSON Web Tokens), BCrypt Password Hashing
 - **Build Tool:** Maven
 - **Utilities:** Lombok

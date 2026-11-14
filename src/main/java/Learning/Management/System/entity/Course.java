@@ -31,7 +31,7 @@ public class Course {
     @Column(nullable = false)
     private String term;
 
-    @Column(name = "school_term", nullable = false)
+    @Column(name = "school_term")
     private SchoolTerm schoolTerm;
 
     @ManyToOne

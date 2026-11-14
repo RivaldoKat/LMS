@@ -11,6 +11,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -24,28 +25,32 @@ public class AnnouncementController {
 
     @GetMapping
     public Page<AnnouncementResponseDTO> getAnnouncements(
-            @PageableDefault(size = 10, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable) {
-        return announcementService.getAllAnnouncement(pageable);
+            @PageableDefault(size = 10, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable,
+            Authentication authentication) {
+        return announcementService.getAllAnnouncement(pageable, authentication);
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<AnnouncementResponseDTO> getAnnouncementById(@PathVariable Long id) {
-        return ResponseEntity.ok(announcementService.getAnnouncementById(id));
+    public ResponseEntity<AnnouncementResponseDTO> getAnnouncementById(
+            @PathVariable Long id, Authentication authentication) {
+        return ResponseEntity.ok(announcementService.getAnnouncementById(id, authentication));
     }
 
-    @PreAuthorize("hasRole('ADMIN', 'TEACHER')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'TEACHER')")
     @PostMapping
-    public ResponseEntity<AnnouncementResponseDTO> createAnnouncement(@Valid @RequestBody AnnouncementRequestDTO dto) {
-        return ResponseEntity.ok(announcementService.createAnnouncement(dto));
+    public ResponseEntity<AnnouncementResponseDTO> createAnnouncement(
+            @Valid @RequestBody AnnouncementRequestDTO dto, Authentication authentication) {
+        return ResponseEntity.ok(announcementService.createAnnouncement(dto, authentication));
     }
 
-    @PreAuthorize("hasRole('ADMIN', 'TEACHER')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'TEACHER')")
     @PutMapping("/{id}")
-    public ResponseEntity<AnnouncementResponseDTO> updateAnnouncement(@PathVariable Long id, @Valid @RequestBody AnnouncementRequestDTO dto) {
+    public ResponseEntity<AnnouncementResponseDTO> updateAnnouncement(
+            @PathVariable Long id, @Valid @RequestBody AnnouncementRequestDTO dto) {
         return ResponseEntity.ok(announcementService.updateAnnouncement(id, dto));
     }
 
-    @PreAuthorize("hasRole('ADMIN', 'TEACHER')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'TEACHER')")
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteAnnouncement(@PathVariable Long id) {
         announcementService.deleteAnnouncement(id);

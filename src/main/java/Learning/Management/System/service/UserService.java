@@ -2,6 +2,8 @@ package Learning.Management.System.service;
 
 import Learning.Management.System.dto.UserRegistrationDTO;
 import Learning.Management.System.dto.UserResponseDTO;
+import Learning.Management.System.dto.LearnerOptionDTO;
+import Learning.Management.System.entity.Role;
 import Learning.Management.System.entity.User;
 import Learning.Management.System.repository.UserRepo;
 import jakarta.transaction.Transactional;
@@ -25,13 +27,15 @@ public class UserService {
 
     public Page<UserResponseDTO> getAllUsers(Pageable pageable) {
         return userRepo.findAll(pageable)
-                .map(user -> UserResponseDTO.builder()
+                .map(this::mapUser);
+    }
+
+    public Page<LearnerOptionDTO> getLearners(Pageable pageable) {
+        return userRepo.findByRole(Role.LEARNER, pageable)
+                .map(user -> LearnerOptionDTO.builder()
                         .id(user.getId())
-                        .email(user.getEmail())
                         .firstName(user.getFirstName())
                         .lastName(user.getLastName())
-                        .role(user.getRole())
-                        .createdAt(user.getCreatedAt())
                         .build());
     }
 
@@ -50,13 +54,17 @@ public class UserService {
 
         User saved = userRepo.save(user);
 
+        return mapUser(saved);
+    }
+
+    private UserResponseDTO mapUser(User user) {
         return UserResponseDTO.builder()
-                .id(saved.getId())
-                .email(saved.getEmail())
-                .firstName(saved.getFirstName())
-                .lastName(saved.getLastName())
-                .role(saved.getRole())
-                .createdAt(saved.getCreatedAt())
+                .id(user.getId())
+                .email(user.getEmail())
+                .firstName(user.getFirstName())
+                .lastName(user.getLastName())
+                .role(user.getRole())
+                .createdAt(user.getCreatedAt())
                 .build();
     }
 }

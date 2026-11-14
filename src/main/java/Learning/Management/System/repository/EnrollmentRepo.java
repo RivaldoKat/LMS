@@ -11,4 +11,6 @@ import java.util.List;
 @Repository
 public interface EnrollmentRepo extends JpaRepository<Enrollment, Long> {
     Page<Enrollment> findByCourseId(Long courseId, Pageable pageable);
+
+    boolean existsByCourseIdAndStudentId(Long courseId, Long studentId);
 }

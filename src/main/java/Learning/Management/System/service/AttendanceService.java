@@ -95,7 +95,7 @@ public class AttendanceService {
                 .courseId(dto.getCourse().getId())
                 .courseName(dto.getCourse().getName())
                 .studentId(dto.getStudent().getId())
-                .studentName(dto.getStudent().toString())
+                .studentName(dto.getStudent().getFirstName() + " " + dto.getStudent().getLastName())
                 .date(dto.getDate())
                 .status(dto.getStatus())
                 .build();

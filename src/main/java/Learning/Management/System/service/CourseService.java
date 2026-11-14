@@ -5,16 +5,16 @@ import Learning.Management.System.dto.CourseResponseDTO;
 import Learning.Management.System.entity.Course;
 import Learning.Management.System.entity.User;
 import Learning.Management.System.repository.CourseRepo;
+import Learning.Management.System.repository.EnrollmentRepo;
 import Learning.Management.System.repository.UserRepo;
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
-
-import java.util.List;
-import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -22,17 +22,25 @@ import java.util.stream.Collectors;
 public class CourseService {
 
     private final CourseRepo courseRepo;
+    private final EnrollmentRepo enrollmentRepo;
     private final UserRepo userRepo;
 
-    public Page<CourseResponseDTO> getAllCourses(Pageable page) {
-        return courseRepo.findAll(page)
+    public Page<CourseResponseDTO> getAllCourses(Pageable page, Authentication authentication) {
+        Page<Course> courses = isLearner(authentication)
+                ? courseRepo.findEnrolledCourses(getLearnerId(authentication), page)
+                : courseRepo.findAll(page);
+        return courses
                 .map(this::mapToDTO);
     }
 
-    public CourseResponseDTO getCourseById(Long id) {
-        return courseRepo.findById(id)
-                .map(this::mapToDTO)
+    public CourseResponseDTO getCourseById(Long id, Authentication authentication) {
+        Course course = courseRepo.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Course not found with id: " + id));
+        if (isLearner(authentication)
+                && !enrollmentRepo.existsByCourseIdAndStudentId(id, getLearnerId(authentication))) {
+            throw new AccessDeniedException("You can only view courses you are enrolled in");
+        }
+        return mapToDTO(course);
     }
 
     public CourseResponseDTO createCourse(CourseRequestDTO dto) {
@@ -44,6 +52,7 @@ public class CourseService {
                 .code(dto.getCode())
                 .description(dto.getDescription())
                 .term(dto.getTerm())
+                .schoolTerm(dto.getSchoolTerm())
                 .teacher(teacher)
                 .build();
 
@@ -82,7 +91,19 @@ public class CourseService {
                 .description(course.getDescription())
                 .term(course.getTerm())
                 .schoolTerm(course.getSchoolTerm())
-                .teacherName(course.getTeacher() != null ? course.getTeacher().toString() : null)
+                .teacherName(course.getTeacher() == null ? null
+                        : course.getTeacher().getFirstName() + " " + course.getTeacher().getLastName())
                 .build();
+    }
+
+    private boolean isLearner(Authentication authentication) {
+        return authentication.getAuthorities().stream()
+                .anyMatch(authority -> authority.getAuthority().equals("ROLE_LEARNER"));
+    }
+
+    private Long getLearnerId(Authentication authentication) {
+        return userRepo.findByEmail(authentication.getName())
+                .orElseThrow(() -> new EntityNotFoundException("Authenticated user was not found"))
+                .getId();
     }
 }

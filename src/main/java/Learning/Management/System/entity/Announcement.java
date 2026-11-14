@@ -25,6 +25,10 @@ public class Announcement {
     @JoinColumn(name = "author_id", nullable = false)
     private User author;
 
+    @ManyToOne
+    @JoinColumn(name = "course_id")
+    private Course course;
+
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 

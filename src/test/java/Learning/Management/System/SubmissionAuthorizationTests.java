@@ -3,6 +3,7 @@ package Learning.Management.System;
 import Learning.Management.System.entity.Assignment;
 import Learning.Management.System.entity.Course;
 import Learning.Management.System.entity.Role;
+import Learning.Management.System.entity.SchoolTerm;
 import Learning.Management.System.entity.User;
 import Learning.Management.System.repository.AssignmentRepo;
 import Learning.Management.System.repository.CourseRepo;
@@ -25,6 +26,10 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @SpringBootTest(properties = {
+        "spring.datasource.url=jdbc:h2:mem:submission-authorization;DB_CLOSE_DELAY=-1",
+        "spring.datasource.username=sa",
+        "spring.datasource.password=",
+        "spring.datasource.driver-class-name=org.h2.Driver",
         "jwt.secret=test-only-signing-key-that-is-at-least-thirty-two-bytes",
         "lms.bootstrap-admin.email=test-admin@example.test",
         "lms.bootstrap-admin.password=test-only-admin-password"
@@ -59,6 +64,7 @@ class SubmissionAuthorizationTests {
                 .name("Test course")
                 .code("TEST-101")
                 .term("Test term")
+                .schoolTerm(SchoolTerm.Term1)
                 .teacher(teacher)
                 .build());
 
@@ -97,7 +103,7 @@ class SubmissionAuthorizationTests {
         mockMvc.perform(post("/api/courses")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"name\":\"New course\",\"code\":\"NEW-101\","
-                                + "\"term\":\"Test term\",\"teacherId\":1}"))
+                                        + "\"term\":\"Test term\",\"schoolTerm\":\"Term1\",\"teacherId\":1}"))
                 .andExpect(status().isForbidden())
                 .andExpect(jsonPath("$.status").value(403));
     }

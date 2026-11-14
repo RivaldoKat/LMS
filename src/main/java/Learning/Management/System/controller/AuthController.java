@@ -2,6 +2,7 @@ package Learning.Management.System.controller;
 
 import Learning.Management.System.dto.LoginRequestDTO;
 import Learning.Management.System.dto.LoginResponseDTO;
+import Learning.Management.System.dto.UserResponseDTO;
 import Learning.Management.System.entity.User;
 import Learning.Management.System.repository.UserRepo;
 import Learning.Management.System.security.CustomerUserDetailsService;
@@ -38,13 +39,28 @@ public class AuthController {
 
         return ResponseEntity.ok(LoginResponseDTO.builder()
                 .token(jwtToken)
+                .id(user.getId())
                 .email(user.getEmail())
                 .role(user.getRole().name())
                 .build());
     }
 
+    @GetMapping("/me")
+    public ResponseEntity<UserResponseDTO> getCurrentUser(Principal principal) {
+        User user = userRepo.findByEmail(principal.getName())
+                .orElseThrow(() -> new EntityNotFoundException("Authenticated user was not found"));
+        return ResponseEntity.ok(UserResponseDTO.builder()
+                .id(user.getId())
+                .email(user.getEmail())
+                .firstName(user.getFirstName())
+                .lastName(user.getLastName())
+                .role(user.getRole())
+                .createdAt(user.getCreatedAt())
+                .build());
+    }
+
     @GetMapping("/users")
-    public ResponseEntity<String> getCurrentUser(@Valid Principal principal) {
+    public ResponseEntity<String> getAuthenticatedUserMessage(@Valid Principal principal) {
         if (principal == null) {
             return ResponseEntity.status(401).body("Not authenticated");
         }

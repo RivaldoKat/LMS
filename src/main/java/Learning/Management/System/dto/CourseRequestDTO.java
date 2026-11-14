@@ -19,7 +19,7 @@ public class CourseRequestDTO {
     @NotBlank(message = "Term is required")
     private String term;
 
-    @NotBlank(message = "Required")
+    @NotNull(message = "Term is required")
     private SchoolTerm schoolTerm;
 
     @NotNull(message = "Teacher ID is required")

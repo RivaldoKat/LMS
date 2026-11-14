@@ -47,6 +47,7 @@ public class EnrollmentService {
         Enrollment enrolled = Enrollment.builder()
                 .course(course)
                 .student(student)
+                .grade(dto.getGrade())
                 .build();
 
         Enrollment saved = enrollmentRepo.save(enrolled);
@@ -65,6 +66,7 @@ public class EnrollmentService {
 
         enrollment.setCourse(course);
         enrollment.setStudent(student);
+        enrollment.setGrade(dto.getGrade());
 
         return mapToDTO(enrollmentRepo.save(enrollment));
     }
@@ -81,7 +83,8 @@ public class EnrollmentService {
                 .courseId(enrollment.getCourse().getId())
                 .studentId(enrollment.getStudent().getId())
                 .courseName(enrollment.getCourse().getName())
-                .studentName(enrollment.getStudent().toString())
+                .studentName(enrollment.getStudent().getFirstName() + " "
+                        + enrollment.getStudent().getLastName())
                 .grade(enrollment.getGrade())
                 .enrollmentAt(enrollment.getEnrolledAt())
                 .build();

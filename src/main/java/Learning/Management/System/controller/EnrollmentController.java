@@ -18,13 +18,14 @@ import java.util.List;
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("api/enrollments")
+@PreAuthorize("hasAnyRole('ADMIN', 'TEACHER')")
 public class EnrollmentController {
 
     private final EnrollmentService enrollmentService;
 
     @GetMapping("/course/{courseId}")
     public Page<EnrollmentResponseDTO> getEnrollmentByCourse(
-            @Valid @PathVariable Long courseId, @PageableDefault(sort = "enrollmentAt", direction = Sort.Direction.DESC) Pageable pageable) {
+            @Valid @PathVariable Long courseId, @PageableDefault(sort = "enrolledAt", direction = Sort.Direction.DESC) Pageable pageable) {
         return enrollmentService.getEnrollmentsByCourse(courseId, pageable);
     }
 
@@ -33,19 +34,19 @@ public class EnrollmentController {
         return ResponseEntity.ok(enrollmentService.getEnrollmentById(id));
     }
 
-    @PreAuthorize("hasRole('ADMIN', 'TEACHER')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'TEACHER')")
     @PostMapping
     public ResponseEntity<EnrollmentResponseDTO> enrollStudent(@Valid @RequestBody EnrollmentRequestDTO dto) {
         return ResponseEntity.ok(enrollmentService.enrollStudent(dto));
     }
 
-    @PreAuthorize("hasRole('ADMIN', 'TEACHER')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'TEACHER')")
     @PutMapping("/{id}")
     public ResponseEntity<EnrollmentResponseDTO> updateEnrollment(@PathVariable Long id, @Valid @RequestBody EnrollmentRequestDTO dto) {
         return ResponseEntity.ok(enrollmentService.updateEnrollment(id, dto));
     }
 
-    @PreAuthorize("hasRole('ADMIN', 'TEACHER')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'TEACHER')")
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteEnrollment(@PathVariable Long id) {
         enrollmentService.deleteEnrollment(id);

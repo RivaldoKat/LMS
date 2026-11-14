@@ -3,7 +3,7 @@ package Learning.Management.System.controller;
 
 import Learning.Management.System.dto.UserRegistrationDTO;
 import Learning.Management.System.dto.UserResponseDTO;
-import Learning.Management.System.repository.UserRepo;
+import Learning.Management.System.dto.LearnerOptionDTO;
 import Learning.Management.System.service.UserService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -13,9 +13,6 @@ import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.List;
-
 
 @RestController
 @RequestMapping("/api/users")
@@ -28,6 +25,12 @@ public class UserController {
     @GetMapping
     public Page<UserResponseDTO> getAllUsers(@PageableDefault Pageable pageable) {
         return userService.getAllUsers(pageable);
+    }
+
+    @GetMapping("/learners")
+    @PreAuthorize("hasAnyRole('ADMIN', 'TEACHER')")
+    public Page<LearnerOptionDTO> getLearners(@PageableDefault(size = 100) Pageable pageable) {
+        return userService.getLearners(pageable);
     }
 
     @PostMapping

@@ -10,6 +10,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
@@ -22,13 +23,15 @@ public class CourseController {
 
     @GetMapping
     public Page<CourseResponseDTO> getAllCourses(
-            @PageableDefault(size = 10, sort = "name", direction = Sort.Direction.ASC) Pageable page) {
-        return courseService.getAllCourses(page);
+            @PageableDefault(size = 10, sort = "name", direction = Sort.Direction.ASC) Pageable page,
+            Authentication authentication) {
+        return courseService.getAllCourses(page, authentication);
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<CourseResponseDTO> getCourseById(@Valid @PathVariable Long id) {
-        return ResponseEntity.ok(courseService.getCourseById(id));
+    public ResponseEntity<CourseResponseDTO> getCourseById(
+            @Valid @PathVariable Long id, Authentication authentication) {
+        return ResponseEntity.ok(courseService.getCourseById(id, authentication));
     }
 
     @PreAuthorize("hasRole('ADMIN')")
