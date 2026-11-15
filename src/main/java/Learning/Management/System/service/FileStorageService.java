@@ -125,6 +125,15 @@ public class FileStorageService implements StorageRepo {
     }
 
     @Override
+    public void deleteFile(String filename) {
+        try {
+            Files.deleteIfExists(load(filename));
+        } catch (IOException e) {
+            throw new StorageException("Failed to delete stored file", e);
+        }
+    }
+
+    @Override
     public void deleteAll() {
         FileSystemUtils.deleteRecursively(rootLocation.toFile());
     }

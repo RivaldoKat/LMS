@@ -18,6 +18,8 @@ public interface StorageRepo {
 
     Resource loadAsResource(String filename);
 
+    void deleteFile(String filename);
+
     void deleteAll();
 
 }

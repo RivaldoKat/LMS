@@ -11,4 +11,6 @@ public class QuizAttemptRequestDTO {
 
     @NotEmpty
     private List<@Valid QuizAnswerRequestDTO> answers;
+
+    private boolean timedOut;
 }

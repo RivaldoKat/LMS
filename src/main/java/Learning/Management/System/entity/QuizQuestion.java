@@ -43,6 +43,9 @@ public class QuizQuestion {
     @Column(name = "correct_option_id")
     private Long correctOptionId;
 
+    @Column(name = "image_url", length = 512)
+    private String imageUrl;
+
     @Builder.Default
     @OneToMany(mappedBy = "question", cascade = CascadeType.ALL, orphanRemoval = true)
     @OrderBy("optionOrder ASC")

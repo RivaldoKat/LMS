@@ -26,4 +26,5 @@ public class QuizResponseDTO {
     private Double myGrade;
     private Double myAutoGradedPoints;
     private String myFeedback;
+    private List<QuizAnswerResponseDTO> myAnswers;
 }

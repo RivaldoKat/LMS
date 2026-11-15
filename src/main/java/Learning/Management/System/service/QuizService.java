@@ -68,9 +68,10 @@ public class QuizService {
         User requester = getRequester(authentication);
         Quiz quiz = findQuiz(quizId);
         requireQuizAccess(quiz, requester);
-        boolean includeQuestions = requester.getRole() != Role.LEARNER
-                || (!OffsetDateTime.now().isBefore(quiz.getOpensAt())
-                && !OffsetDateTime.now().isAfter(quiz.getClosesAt()));
+        OffsetDateTime now = OffsetDateTime.now();
+        boolean quizOpen = !now.isBefore(quiz.getOpensAt()) && !now.isAfter(quiz.getClosesAt());
+        boolean answersReleased = !now.isBefore(quiz.getClosesAt());
+        boolean includeQuestions = requester.getRole() != Role.LEARNER || quizOpen || answersReleased;
         return mapQuiz(quiz, requester, includeQuestions);
     }
 
@@ -101,6 +102,7 @@ public class QuizService {
                     .prompt(questionDto.getPrompt().trim())
                     .maxPoints(questionDto.getMaxPoints())
                     .questionType(questionDto.getQuestionType())
+                    .imageUrl(questionDto.getImageUrl())
                     .options(new ArrayList<>())
                     .build();
             if (questionDto.getQuestionType() == QuizQuestionType.MULTIPLE_CHOICE) {
@@ -130,7 +132,12 @@ public class QuizService {
         Quiz quiz = findQuiz(quizId);
         requireEnrolledLearner(quiz, learner);
         OffsetDateTime now = OffsetDateTime.now();
-        if (now.isBefore(quiz.getOpensAt()) || now.isAfter(quiz.getClosesAt())) {
+        if (dto.isTimedOut() && now.isBefore(quiz.getClosesAt().minusSeconds(2))) {
+            throw new IllegalArgumentException("The quiz timer has not expired");
+        }
+        if (now.isBefore(quiz.getOpensAt())
+                || (now.isAfter(quiz.getClosesAt())
+                && (!dto.isTimedOut() || now.isAfter(quiz.getClosesAt().plusMinutes(2))))) {
             throw new IllegalArgumentException("This quiz is not currently open");
         }
         if (attemptRepo.findByQuizIdAndLearnerId(quizId, learner.getId()).isPresent()) {
@@ -148,7 +155,7 @@ public class QuizService {
             }
             answersByQuestion.put(answer.getQuestionId(), answer);
         }
-        if (!answeredQuestionIds.equals(expectedQuestionIds)) {
+        if (!dto.isTimedOut() && !answeredQuestionIds.equals(expectedQuestionIds)) {
             throw new IllegalArgumentException("Please answer every question before submitting");
         }
 
@@ -156,20 +163,34 @@ public class QuizService {
         boolean hasWrittenQuestions = false;
         for (QuizQuestion question : quiz.getQuestions()) {
             QuizAnswerRequestDTO answer = answersByQuestion.get(question.getId());
+            if (answer == null) {
+                if (!dto.isTimedOut()) {
+                    throw new IllegalArgumentException("Please answer every question before submitting");
+                }
+                if (question.getQuestionType() == QuizQuestionType.WRITTEN) {
+                    hasWrittenQuestions = true;
+                }
+                continue;
+            }
             if (question.getQuestionType() == QuizQuestionType.MULTIPLE_CHOICE) {
-                if (answer.getSelectedOptionId() == null || hasText(answer.getResponseText())) {
+                if ((!dto.isTimedOut() && answer.getSelectedOptionId() == null)
+                        || hasText(answer.getResponseText())) {
                     throw new IllegalArgumentException("Select one option for each multiple-choice question");
                 }
-                boolean optionBelongsToQuestion = question.getOptions().stream()
-                        .anyMatch(option -> option.getId().equals(answer.getSelectedOptionId()));
-                if (!optionBelongsToQuestion) {
-                    throw new IllegalArgumentException("Selected option does not belong to this question");
+                if (answer.getSelectedOptionId() != null) {
+                    boolean optionBelongsToQuestion = question.getOptions().stream()
+                            .anyMatch(option -> option.getId().equals(answer.getSelectedOptionId()));
+                    if (!optionBelongsToQuestion) {
+                        throw new IllegalArgumentException("Selected option does not belong to this question");
+                    }
                 }
-                if (answer.getSelectedOptionId().equals(question.getCorrectOptionId())) {
+                if (answer.getSelectedOptionId() != null
+                        && answer.getSelectedOptionId().equals(question.getCorrectOptionId())) {
                     autoGradedPoints += question.getMaxPoints();
                 }
             } else {
-                if (answer.getSelectedOptionId() != null || !hasText(answer.getResponseText())) {
+                if (answer.getSelectedOptionId() != null
+                        || !dto.isTimedOut() && !hasText(answer.getResponseText())) {
                     throw new IllegalArgumentException("Enter a written response for each written question");
                 }
                 hasWrittenQuestions = true;
@@ -184,16 +205,14 @@ public class QuizService {
                 .gradedAt(hasWrittenQuestions ? null : LocalDateTime.now())
                 .answers(new ArrayList<>())
                 .build();
-        for (QuizAnswerRequestDTO answerDto : dto.getAnswers()) {
-            QuizQuestion question = quiz.getQuestions().stream()
-                    .filter(candidate -> candidate.getId().equals(answerDto.getQuestionId()))
-                    .findFirst()
-                    .orElseThrow();
+        for (QuizQuestion question : quiz.getQuestions()) {
+            QuizAnswerRequestDTO answerDto = answersByQuestion.get(question.getId());
             attempt.getAnswers().add(QuizAnswer.builder()
                     .attempt(attempt)
                     .question(question)
-                    .responseText(answerDto.getResponseText() == null ? "" : answerDto.getResponseText().trim())
-                    .selectedOptionId(answerDto.getSelectedOptionId())
+                    .responseText(answerDto == null || answerDto.getResponseText() == null
+                            ? "" : answerDto.getResponseText().trim())
+                    .selectedOptionId(answerDto == null ? null : answerDto.getSelectedOptionId())
                     .build());
         }
         return mapAttempt(attemptRepo.saveAndFlush(attempt), false);
@@ -273,6 +292,10 @@ public class QuizService {
         if (dto.getQuestionType() == null) {
             throw new IllegalArgumentException("Choose a question type");
         }
+        if (hasText(dto.getImageUrl())
+                && !dto.getImageUrl().matches("^/api/quizzes/images/[A-Za-z0-9._-]+$")) {
+            throw new IllegalArgumentException("Question images must be uploaded through the quiz image endpoint");
+        }
         if (dto.getQuestionType() == QuizQuestionType.WRITTEN) {
             if (dto.getOptions() != null && !dto.getOptions().isEmpty()) {
                 throw new IllegalArgumentException("Written questions cannot have answer options");
@@ -324,17 +347,43 @@ public class QuizService {
                         .prompt(question.getPrompt())
                         .maxPoints(question.getMaxPoints())
                         .questionType(question.getQuestionType())
+                        .imageUrl(question.getImageUrl())
                         .options(question.getOptions().stream().map(option -> QuizOptionResponseDTO.builder()
                                 .id(option.getId())
                                 .text(option.getOptionText())
                                 .build()).toList())
-                        .correctOptionId(requester.getRole() == Role.LEARNER ? null : question.getCorrectOptionId())
+                        .correctOptionId(requester.getRole() == Role.LEARNER
+                                && OffsetDateTime.now().isBefore(quiz.getClosesAt())
+                                ? null : question.getCorrectOptionId())
                         .build()).toList() : List.of())
                 .myAttemptId(myAttempt == null ? null : myAttempt.getId())
                 .myAttemptStatus(myAttempt == null ? null : myAttempt.getStatus())
                 .myGrade(myAttempt == null ? null : myAttempt.getGrade())
                 .myAutoGradedPoints(myAttempt == null ? null : autoGradedPoints(myAttempt))
                 .myFeedback(myAttempt == null ? null : myAttempt.getFeedback())
+                .myAnswers(myAttempt == null ? List.of() : myAttempt.getAnswers().stream()
+                        .map(answer -> QuizAnswerResponseDTO.builder()
+                                .questionId(answer.getQuestion().getId())
+                                .prompt(answer.getQuestion().getPrompt())
+                                .maxPoints(answer.getQuestion().getMaxPoints())
+                                .questionType(answer.getQuestion().getQuestionType())
+                                .responseText(answer.getResponseText())
+                                .selectedOptionId(answer.getSelectedOptionId())
+                                .selectedOptionText(answer.getQuestion().getOptions().stream()
+                                        .filter(option -> option.getId().equals(answer.getSelectedOptionId()))
+                                        .map(QuizQuestionOption::getOptionText)
+                                        .findFirst()
+                                        .orElse(null))
+                                .correctOptionId(OffsetDateTime.now().isBefore(quiz.getClosesAt())
+                                        ? null : answer.getQuestion().getCorrectOptionId())
+                                .correctOptionText(OffsetDateTime.now().isBefore(quiz.getClosesAt())
+                                        ? null : answer.getQuestion().getOptions().stream()
+                                                .filter(option -> option.getId().equals(answer.getQuestion()
+                                                        .getCorrectOptionId()))
+                                                .map(QuizQuestionOption::getOptionText)
+                                                .findFirst()
+                                                .orElse(null))
+                                .build()).toList())
                 .build();
     }
 

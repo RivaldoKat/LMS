@@ -24,4 +24,6 @@ public class QuizQuestionRequestDTO {
     private List<@NotBlank String> options;
 
     private Integer correctOptionIndex;
+
+    private String imageUrl;
 }

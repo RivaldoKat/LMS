@@ -14,4 +14,5 @@ public class QuizQuestionResponseDTO {
     private Learning.Management.System.entity.QuizQuestionType questionType;
     private List<QuizOptionResponseDTO> options;
     private Long correctOptionId;
+    private String imageUrl;
 }
