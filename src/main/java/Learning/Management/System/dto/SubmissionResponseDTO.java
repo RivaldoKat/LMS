@@ -16,6 +16,7 @@ public class SubmissionResponseDTO {
     private String studentName;
     private String fileUrl;
     private LocalDateTime submittedAt;
+    private LocalDateTime gradedAt;
     private Double grade;
     private String feedback;
     private SubmissionStatus status;

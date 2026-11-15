@@ -34,6 +34,9 @@ public class Submission {
     @Column(name = "submitted_at")
     private LocalDateTime submittedAt;
 
+    @Column(name = "graded_at")
+    private LocalDateTime gradedAt;
+
     private Double grade;
 
     @Column(columnDefinition = "Text")

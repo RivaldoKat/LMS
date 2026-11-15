@@ -4,9 +4,12 @@ import Learning.Management.System.entity.Assignment;
 import Learning.Management.System.entity.Course;
 import Learning.Management.System.entity.Role;
 import Learning.Management.System.entity.SchoolTerm;
+import Learning.Management.System.entity.Submission;
+import Learning.Management.System.entity.SubmissionStatus;
 import Learning.Management.System.entity.User;
 import Learning.Management.System.repository.AssignmentRepo;
 import Learning.Management.System.repository.CourseRepo;
+import Learning.Management.System.repository.SubmissionRepo;
 import Learning.Management.System.repository.UserRepo;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -49,6 +52,9 @@ class SubmissionAuthorizationTests {
 
     @Autowired
     private AssignmentRepo assignmentRepo;
+
+    @Autowired
+    private SubmissionRepo submissionRepo;
 
     private User learner;
     private User otherLearner;
@@ -95,6 +101,24 @@ class SubmissionAuthorizationTests {
         mockMvc.perform(get("/api/submissions/student/{studentId}", otherLearner.getId()))
                 .andExpect(status().isForbidden())
                 .andExpect(jsonPath("$.status").value(403));
+    }
+
+    @Test
+    @WithMockUser(username = "learner@example.test", roles = "LEARNER")
+    void learnerCanReadRecentGradesForTheirOwnSubmissions() throws Exception {
+        submissionRepo.save(Submission.builder()
+                .assignment(assignment)
+                .student(learner)
+                .grade(92.0)
+                .gradedAt(LocalDateTime.now())
+                .status(SubmissionStatus.GRADED)
+                .build());
+
+        mockMvc.perform(get("/api/submissions/recent"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.content[0].assignmentTitle").value("Test assignment"))
+                .andExpect(jsonPath("$.content[0].grade").value(92.0))
+                .andExpect(jsonPath("$.content[0].gradedAt").isNotEmpty());
     }
 
     @Test

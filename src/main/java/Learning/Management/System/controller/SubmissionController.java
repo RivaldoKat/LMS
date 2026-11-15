@@ -36,6 +36,13 @@ public class SubmissionController {
         return ResponseEntity.ok(submissionService.getSubmissionByStudent(studentId, pageable, authentication));
     }
 
+    @GetMapping("/recent")
+    public ResponseEntity<Page<SubmissionResponseDTO>> getRecentGrades(
+            @PageableDefault(size = 5, sort = "gradedAt", direction = Sort.Direction.DESC) Pageable pageable,
+            Authentication authentication) {
+        return ResponseEntity.ok(submissionService.getRecentGrades(pageable, authentication));
+    }
+
     @GetMapping("/{id}")
     public ResponseEntity<SubmissionResponseDTO> getSubmissionById(
             @PathVariable Long id, Authentication authentication) {

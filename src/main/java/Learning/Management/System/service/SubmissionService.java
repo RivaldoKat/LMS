@@ -1,5 +1,7 @@
 package Learning.Management.System.service;
 
+import java.time.LocalDateTime;
+
 import Learning.Management.System.dto.GradeRequestDTO;
 import Learning.Management.System.dto.SubmissionRequestDTO;
 import Learning.Management.System.dto.SubmissionResponseDTO;
@@ -43,6 +45,21 @@ public class SubmissionService {
         return submissions.map(this::mapToDTO);
     }
 
+    public Page<SubmissionResponseDTO> getRecentGrades(Pageable pageable, Authentication authentication) {
+        User requester = getRequester(authentication);
+        Page<Submission> submissions;
+        if (isAdmin(authentication)) {
+            submissions = submissionRepo.findByStatus(SubmissionStatus.GRADED, pageable);
+        } else if (isTeacher(authentication)) {
+            submissions = submissionRepo.findByAssignmentCourseTeacherIdAndStatus(
+                    requester.getId(), SubmissionStatus.GRADED, pageable);
+        } else {
+            submissions = submissionRepo.findByStudentIdAndStatus(
+                    requester.getId(), SubmissionStatus.GRADED, pageable);
+        }
+        return submissions.map(this::mapToDTO);
+    }
+
     public SubmissionResponseDTO getSubmissionById(Long id, Authentication authentication) {
         Submission submission = submissionRepo.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Submission not found with id: " + id));
@@ -80,6 +97,7 @@ public class SubmissionService {
                 .studentName(submission.getStudent().getFirstName() + " "
                         + submission.getStudent().getLastName())
                 .submittedAt(submission.getSubmittedAt())
+                .gradedAt(submission.getGradedAt())
                 .grade(submission.getGrade())
                 .feedback(submission.getFeedback())
                 .status(submission.getStatus())
@@ -124,6 +142,7 @@ public class SubmissionService {
         submission.setGrade(dto.getGrade());
         submission.setFeedback(dto.getFeedback());
         submission.setStatus(SubmissionStatus.GRADED);
+        submission.setGradedAt(LocalDateTime.now());
 
         Submission updated = submissionRepo.save(submission);
         return
