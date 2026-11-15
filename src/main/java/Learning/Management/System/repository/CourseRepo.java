@@ -10,12 +10,15 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.Optional;
+import java.util.List;
 
 
 
 @Repository
 public interface CourseRepo extends JpaRepository<Course, Long> {
     Optional<Course> findByCode(String code);
+
+    List<Course> findByTeacherIdOrderByNameAsc(Long teacherId);
 
     @Query("select c from Course c where exists "
             + "(select e.id from Enrollment e where e.course = c and e.student.id = :learnerId)")
