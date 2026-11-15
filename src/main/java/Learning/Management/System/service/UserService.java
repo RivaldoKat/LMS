@@ -36,6 +36,7 @@ public class UserService {
                         .id(user.getId())
                         .firstName(user.getFirstName())
                         .lastName(user.getLastName())
+                        .email(user.getEmail())
                         .build());
     }
 
