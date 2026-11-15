@@ -30,6 +30,9 @@ public class Assignment {
     @Column(columnDefinition = "Text")
     private String description;
 
+    @Column(name = "attachment_url")
+    private String attachmentUrl;
+
     @Column(name = "due_date", nullable = false)
     private LocalDateTime dueDate;
 

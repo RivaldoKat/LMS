@@ -13,6 +13,7 @@ public class AssignmentResponseDTO {
     private String courseName;
     private String title;
     private String description;
+    private String attachmentUrl;
     private LocalDateTime dueDate;
     private Double maxScore;
 }

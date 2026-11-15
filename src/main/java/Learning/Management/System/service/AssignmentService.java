@@ -66,6 +66,7 @@ public class AssignmentService {
                 .course(course)
                 .title(dto.getTitle())
                 .description(dto.getDescription())
+                .attachmentUrl(dto.getAttachmentUrl())
                 .dueDate(dto.getDueDate())
                 .maxScore(dto.getMaxScore())
                 .build();
@@ -85,6 +86,9 @@ public class AssignmentService {
         assignment.setCourse(course);
         assignment.setTitle(dto.getTitle());
         assignment.setDescription(dto.getDescription());
+        if (dto.getAttachmentUrl() != null) {
+            assignment.setAttachmentUrl(dto.getAttachmentUrl());
+        }
         assignment.setDueDate(dto.getDueDate());
         assignment.setMaxScore(dto.getMaxScore());
 
@@ -104,6 +108,7 @@ public class AssignmentService {
                 .courseName(assignment.getCourse().getName())
                 .title(assignment.getTitle())
                 .description(assignment.getDescription())
+                .attachmentUrl(assignment.getAttachmentUrl())
                 .dueDate(assignment.getDueDate())
                 .maxScore(assignment.getMaxScore())
                 .build();

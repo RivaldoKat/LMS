@@ -17,6 +17,8 @@ public class AssignmentRequestDTO {
     @NotNull(message = "Description is required")
     private String description;
 
+    private String attachmentUrl;
+
     @NotNull(message = "Required field")
     private LocalDateTime dueDate;
 
