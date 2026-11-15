@@ -19,6 +19,12 @@ A Spring Boot REST API for a single-school Learning Management System, designed 
 - PostgreSQL uses the Render internal JDBC URL in `src/main/resources/application.yaml`; set `DB_USER` and `DB_PASSWORD` in the Render web service environment. Set `JWT_SECRET` to a value of at least 32 bytes. `PORT` is read from Render automatically and defaults to `8080` locally. Set `LMS_CORS_ALLOWED_ORIGINS` to the deployed frontend origin.
 - Sample data is disabled by default. To use uploaded files with a Render persistent disk, mount the disk (for example at `/var/data`) and set `STORAGE_LOCATION=/var/data/uploads`. Without a persistent disk, uploads on Render's local filesystem may be lost when the service restarts or redeploys.
 
+## Deploying to Render
+
+This repository includes a `render.yaml` Blueprint and a `Dockerfile`. In Render, create a new Blueprint from this repository and provide `DB_URL`, `DB_USER`, `DB_PASSWORD`, and `LMS_CORS_ALLOWED_ORIGINS` when prompted. Use the PostgreSQL database's internal JDBC URL, for example `jdbc:postgresql://HOST:5432/DATABASE?sslmode=require`, and set the CORS value to the frontend's origin only (for example `https://YOURNAME.github.io`). Render generates `JWT_SECRET` automatically. The service runs Flyway migrations at startup and exposes `/actuator/health` for health checks.
+
+The Blueprint uses Render's free web-service plan. Its local upload directory is ephemeral, so uploaded files can be lost when the service restarts or redeploys; durable uploads require persistent or external storage.
+
 
 ## Tech Stack
 - **Language:** Java 27
