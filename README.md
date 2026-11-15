@@ -6,7 +6,7 @@ A Spring Boot REST API for a single-school Learning Management System, designed 
 - **JWT & Stateless Security:** Secure authentication and role-based access control (RBAC) via Spring Security.
 - **Academic Management:** Course creation, student course enrollments, and term management.
 - **Assignments & Submissions:** Assignment publishing, student file uploads, and a comprehensive grading/feedback workflow.
-- **Online quizzes:** Teachers schedule written-response quizzes for their courses, learners submit one attempt, and teachers grade responses with feedback.
+- **Online quizzes:** Teachers schedule written-response or multiple-choice quizzes for their courses. Multiple-choice answers are auto-scored, while written responses can be graded by teachers with feedback. Learners get one attempt, and answer keys are limited to teacher views.
 - **Attendance & Announcements:** Daily attendance tracking and announcements that can target a course or the whole school.
 - **Learner data scope:** Learners receive only their enrolled courses, assignments for those courses, and school-wide or enrolled-course announcements. Enrollment and attendance management is staff-only.
 - **Robust Error Handling:** Global exception handling (`@RestControllerAdvice`) and strict input validation (`@Valid`).

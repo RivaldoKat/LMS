@@ -18,9 +18,12 @@ public class QuizResponseDTO {
     private OffsetDateTime opensAt;
     private OffsetDateTime closesAt;
     private Double totalPoints;
+    private Boolean hasMultipleChoiceQuestions;
+    private Boolean hasWrittenQuestions;
     private List<QuizQuestionResponseDTO> questions;
     private Long myAttemptId;
     private QuizAttemptStatus myAttemptStatus;
     private Double myGrade;
+    private Double myAutoGradedPoints;
     private String myFeedback;
 }

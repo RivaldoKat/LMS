@@ -18,7 +18,10 @@ import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.IdentityHashMap;
 import java.util.List;
+import java.util.Locale;
+import java.util.Map;
 import java.util.Set;
 
 @Service
@@ -90,14 +93,35 @@ public class QuizService {
                 .closesAt(dto.getClosesAt())
                 .questions(new ArrayList<>())
                 .build();
+        Map<QuizQuestion, Integer> correctOptionIndexes = new IdentityHashMap<>();
         for (QuizQuestionRequestDTO questionDto : dto.getQuestions()) {
-            quiz.getQuestions().add(QuizQuestion.builder()
+            validateQuestion(questionDto);
+            QuizQuestion question = QuizQuestion.builder()
                     .quiz(quiz)
                     .prompt(questionDto.getPrompt().trim())
                     .maxPoints(questionDto.getMaxPoints())
-                    .build());
+                    .questionType(questionDto.getQuestionType())
+                    .options(new ArrayList<>())
+                    .build();
+            if (questionDto.getQuestionType() == QuizQuestionType.MULTIPLE_CHOICE) {
+                for (int i = 0; i < questionDto.getOptions().size(); i++) {
+                    question.getOptions().add(QuizQuestionOption.builder()
+                            .question(question)
+                            .optionText(questionDto.getOptions().get(i).trim())
+                            .optionOrder(i)
+                            .build());
+                }
+                correctOptionIndexes.put(question, questionDto.getCorrectOptionIndex());
+            }
+            quiz.getQuestions().add(question);
         }
-        return mapQuiz(quizRepo.save(quiz), teacher, true);
+        Quiz savedQuiz = quizRepo.saveAndFlush(quiz);
+        correctOptionIndexes.forEach((question, index) ->
+                question.setCorrectOptionId(question.getOptions().get(index).getId()));
+        if (!correctOptionIndexes.isEmpty()) {
+            savedQuiz = quizRepo.saveAndFlush(savedQuiz);
+        }
+        return mapQuiz(savedQuiz, teacher, true);
     }
 
     public QuizAttemptResponseDTO submitAttempt(
@@ -116,20 +140,48 @@ public class QuizService {
         Set<Long> expectedQuestionIds = new HashSet<>();
         quiz.getQuestions().forEach(question -> expectedQuestionIds.add(question.getId()));
         Set<Long> answeredQuestionIds = new HashSet<>();
+        Map<Long, QuizAnswerRequestDTO> answersByQuestion = new java.util.HashMap<>();
         for (QuizAnswerRequestDTO answer : dto.getAnswers()) {
             if (!expectedQuestionIds.contains(answer.getQuestionId())
                     || !answeredQuestionIds.add(answer.getQuestionId())) {
                 throw new IllegalArgumentException("Quiz answers must contain each quiz question exactly once");
             }
+            answersByQuestion.put(answer.getQuestionId(), answer);
         }
         if (!answeredQuestionIds.equals(expectedQuestionIds)) {
             throw new IllegalArgumentException("Please answer every question before submitting");
         }
 
+        double autoGradedPoints = 0;
+        boolean hasWrittenQuestions = false;
+        for (QuizQuestion question : quiz.getQuestions()) {
+            QuizAnswerRequestDTO answer = answersByQuestion.get(question.getId());
+            if (question.getQuestionType() == QuizQuestionType.MULTIPLE_CHOICE) {
+                if (answer.getSelectedOptionId() == null || hasText(answer.getResponseText())) {
+                    throw new IllegalArgumentException("Select one option for each multiple-choice question");
+                }
+                boolean optionBelongsToQuestion = question.getOptions().stream()
+                        .anyMatch(option -> option.getId().equals(answer.getSelectedOptionId()));
+                if (!optionBelongsToQuestion) {
+                    throw new IllegalArgumentException("Selected option does not belong to this question");
+                }
+                if (answer.getSelectedOptionId().equals(question.getCorrectOptionId())) {
+                    autoGradedPoints += question.getMaxPoints();
+                }
+            } else {
+                if (answer.getSelectedOptionId() != null || !hasText(answer.getResponseText())) {
+                    throw new IllegalArgumentException("Enter a written response for each written question");
+                }
+                hasWrittenQuestions = true;
+            }
+        }
+
         QuizAttempt attempt = QuizAttempt.builder()
                 .quiz(quiz)
                 .learner(learner)
-                .status(QuizAttemptStatus.SUBMITTED)
+                .status(hasWrittenQuestions ? QuizAttemptStatus.SUBMITTED : QuizAttemptStatus.GRADED)
+                .grade(autoGradedPoints)
+                .gradedAt(hasWrittenQuestions ? null : LocalDateTime.now())
                 .answers(new ArrayList<>())
                 .build();
         for (QuizAnswerRequestDTO answerDto : dto.getAnswers()) {
@@ -140,10 +192,11 @@ public class QuizService {
             attempt.getAnswers().add(QuizAnswer.builder()
                     .attempt(attempt)
                     .question(question)
-                    .responseText(answerDto.getResponseText().trim())
+                    .responseText(answerDto.getResponseText() == null ? "" : answerDto.getResponseText().trim())
+                    .selectedOptionId(answerDto.getSelectedOptionId())
                     .build());
         }
-        return mapAttempt(attemptRepo.save(attempt));
+        return mapAttempt(attemptRepo.saveAndFlush(attempt), false);
     }
 
     public List<QuizAttemptResponseDTO> getAttempts(Long quizId, Authentication authentication) {
@@ -151,7 +204,7 @@ public class QuizService {
         Quiz quiz = findQuiz(quizId);
         requireTeacherOrAdmin(quiz, requester);
         return attemptRepo.findByQuizIdOrderBySubmittedAtDesc(quizId).stream()
-                .map(this::mapAttempt)
+                .map(attempt -> mapAttempt(attempt, true))
                 .toList();
     }
 
@@ -165,14 +218,16 @@ public class QuizService {
             throw new IllegalArgumentException("This quiz attempt has already been graded");
         }
         double totalPoints = totalPoints(attempt.getQuiz());
-        if (dto.getGrade() > totalPoints) {
-            throw new IllegalArgumentException("Grade cannot exceed the quiz total of " + totalPoints);
+        double autoGradedPoints = autoGradedPoints(attempt);
+        if (dto.getGrade() < autoGradedPoints || dto.getGrade() > totalPoints) {
+            throw new IllegalArgumentException(
+                    "Final grade must be between " + autoGradedPoints + " and " + totalPoints);
         }
         attempt.setGrade(dto.getGrade());
         attempt.setFeedback(dto.getFeedback());
         attempt.setGradedAt(LocalDateTime.now());
         attempt.setStatus(QuizAttemptStatus.GRADED);
-        return mapAttempt(attemptRepo.save(attempt));
+        return mapAttempt(attemptRepo.saveAndFlush(attempt), true);
     }
 
     private Quiz findQuiz(Long quizId) {
@@ -214,6 +269,39 @@ public class QuizService {
                 .orElseThrow(() -> new EntityNotFoundException("Authenticated user was not found"));
     }
 
+    private void validateQuestion(QuizQuestionRequestDTO dto) {
+        if (dto.getQuestionType() == null) {
+            throw new IllegalArgumentException("Choose a question type");
+        }
+        if (dto.getQuestionType() == QuizQuestionType.WRITTEN) {
+            if (dto.getOptions() != null && !dto.getOptions().isEmpty()) {
+                throw new IllegalArgumentException("Written questions cannot have answer options");
+            }
+            if (dto.getCorrectOptionIndex() != null) {
+                throw new IllegalArgumentException("Written questions cannot have a correct option");
+            }
+            return;
+        }
+        if (dto.getOptions() == null || dto.getOptions().size() < 2) {
+            throw new IllegalArgumentException("Multiple-choice questions need at least two options");
+        }
+        Set<String> normalizedOptions = new HashSet<>();
+        for (String option : dto.getOptions()) {
+            if (!hasText(option) || !normalizedOptions.add(option.trim().toLowerCase(Locale.ROOT))) {
+                throw new IllegalArgumentException("Multiple-choice options must be non-empty and unique");
+            }
+        }
+        if (dto.getCorrectOptionIndex() == null
+                || dto.getCorrectOptionIndex() < 0
+                || dto.getCorrectOptionIndex() >= dto.getOptions().size()) {
+            throw new IllegalArgumentException("Choose the correct multiple-choice option");
+        }
+    }
+
+    private boolean hasText(String value) {
+        return value != null && !value.isBlank();
+    }
+
     private QuizResponseDTO mapQuiz(Quiz quiz, User requester, boolean includeQuestions) {
         QuizAttempt myAttempt = requester.getRole() == Role.LEARNER
                 ? attemptRepo.findByQuizIdAndLearnerId(quiz.getId(), requester.getId()).orElse(null)
@@ -227,19 +315,30 @@ public class QuizService {
                 .opensAt(quiz.getOpensAt())
                 .closesAt(quiz.getClosesAt())
                 .totalPoints(totalPoints(quiz))
+                .hasMultipleChoiceQuestions(quiz.getQuestions().stream()
+                        .anyMatch(question -> question.getQuestionType() == QuizQuestionType.MULTIPLE_CHOICE))
+                .hasWrittenQuestions(quiz.getQuestions().stream()
+                        .anyMatch(question -> question.getQuestionType() == QuizQuestionType.WRITTEN))
                 .questions(includeQuestions ? quiz.getQuestions().stream().map(question -> QuizQuestionResponseDTO.builder()
                         .id(question.getId())
                         .prompt(question.getPrompt())
                         .maxPoints(question.getMaxPoints())
+                        .questionType(question.getQuestionType())
+                        .options(question.getOptions().stream().map(option -> QuizOptionResponseDTO.builder()
+                                .id(option.getId())
+                                .text(option.getOptionText())
+                                .build()).toList())
+                        .correctOptionId(requester.getRole() == Role.LEARNER ? null : question.getCorrectOptionId())
                         .build()).toList() : List.of())
                 .myAttemptId(myAttempt == null ? null : myAttempt.getId())
                 .myAttemptStatus(myAttempt == null ? null : myAttempt.getStatus())
                 .myGrade(myAttempt == null ? null : myAttempt.getGrade())
+                .myAutoGradedPoints(myAttempt == null ? null : autoGradedPoints(myAttempt))
                 .myFeedback(myAttempt == null ? null : myAttempt.getFeedback())
                 .build();
     }
 
-    private QuizAttemptResponseDTO mapAttempt(QuizAttempt attempt) {
+    private QuizAttemptResponseDTO mapAttempt(QuizAttempt attempt, boolean revealCorrectOptions) {
         return QuizAttemptResponseDTO.builder()
                 .id(attempt.getId())
                 .quizId(attempt.getQuiz().getId())
@@ -250,14 +349,40 @@ public class QuizService {
                 .gradedAt(attempt.getGradedAt())
                 .grade(attempt.getGrade())
                 .feedback(attempt.getFeedback())
+                .autoGradedPoints(autoGradedPoints(attempt))
                 .status(attempt.getStatus())
                 .answers(attempt.getAnswers().stream().map(answer -> QuizAnswerResponseDTO.builder()
                         .questionId(answer.getQuestion().getId())
                         .prompt(answer.getQuestion().getPrompt())
                         .maxPoints(answer.getQuestion().getMaxPoints())
+                        .questionType(answer.getQuestion().getQuestionType())
                         .responseText(answer.getResponseText())
+                        .selectedOptionId(answer.getSelectedOptionId())
+                        .selectedOptionText(answer.getQuestion().getOptions().stream()
+                                .filter(option -> option.getId().equals(answer.getSelectedOptionId()))
+                                .map(QuizQuestionOption::getOptionText)
+                                .findFirst()
+                                .orElse(null))
+                        .correctOptionId(revealCorrectOptions
+                                ? answer.getQuestion().getCorrectOptionId() : null)
+                        .correctOptionText(revealCorrectOptions
+                                ? answer.getQuestion().getOptions().stream()
+                                        .filter(option -> option.getId().equals(answer.getQuestion().getCorrectOptionId()))
+                                        .map(QuizQuestionOption::getOptionText)
+                                        .findFirst()
+                                        .orElse(null)
+                                : null)
                         .build()).toList())
                 .build();
+    }
+
+    private double autoGradedPoints(QuizAttempt attempt) {
+        return attempt.getAnswers().stream()
+                .filter(answer -> answer.getQuestion().getQuestionType() == QuizQuestionType.MULTIPLE_CHOICE)
+                .filter(answer -> answer.getSelectedOptionId() != null
+                        && answer.getSelectedOptionId().equals(answer.getQuestion().getCorrectOptionId()))
+                .mapToDouble(answer -> answer.getQuestion().getMaxPoints())
+                .sum();
     }
 
     private double totalPoints(Quiz quiz) {

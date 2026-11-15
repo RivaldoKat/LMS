@@ -10,6 +10,7 @@ public class QuizAnswerRequestDTO {
     @NotNull
     private Long questionId;
 
-    @NotBlank
     private String responseText;
+
+    private Long selectedOptionId;
 }

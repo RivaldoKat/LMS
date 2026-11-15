@@ -36,4 +36,7 @@ public class QuizAnswer {
 
     @Column(name = "response_text", nullable = false, columnDefinition = "TEXT")
     private String responseText;
+
+    @Column(name = "selected_option_id")
+    private Long selectedOptionId;
 }

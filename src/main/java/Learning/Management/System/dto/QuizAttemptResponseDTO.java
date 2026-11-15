@@ -19,6 +19,7 @@ public class QuizAttemptResponseDTO {
     private LocalDateTime gradedAt;
     private Double grade;
     private String feedback;
+    private Double autoGradedPoints;
     private QuizAttemptStatus status;
     private List<QuizAnswerResponseDTO> answers;
 }
