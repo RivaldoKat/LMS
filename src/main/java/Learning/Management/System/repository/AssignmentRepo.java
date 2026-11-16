@@ -14,6 +14,10 @@ import java.util.Optional;
 public interface AssignmentRepo extends JpaRepository<Assignment, Long> {
     Page<Assignment> findByCourseId(Long courseId, Pageable page);
 
+    Page<Assignment> findByCourseTeacherId(Long teacherId, Pageable page);
+
+    long countByCourseTeacherId(Long teacherId);
+
     @Query("select a from Assignment a where exists "
             + "(select e.id from Enrollment e where e.course = a.course and e.student.id = :learnerId)")
     Page<Assignment> findVisibleToLearner(@Param("learnerId") Long learnerId, Pageable page);

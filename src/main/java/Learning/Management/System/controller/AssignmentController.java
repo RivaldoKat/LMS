@@ -51,20 +51,22 @@ public class AssignmentController {
 
     @PreAuthorize("hasAnyRole('ADMIN', 'TEACHER')")
     @PostMapping
-    public ResponseEntity<AssignmentResponseDTO> createAssignment(@Valid @RequestBody AssignmentRequestDTO dto) {
-        return ResponseEntity.ok(assignmentService.createAssignment(dto));
+    public ResponseEntity<AssignmentResponseDTO> createAssignment(
+            @Valid @RequestBody AssignmentRequestDTO dto, Authentication authentication) {
+        return ResponseEntity.ok(assignmentService.createAssignment(dto, authentication));
     }
 
     @PreAuthorize("hasAnyRole('ADMIN', 'TEACHER')")
     @PutMapping("/{id}")
-    public ResponseEntity<AssignmentResponseDTO> updateAssignment(@PathVariable Long id, @Valid @RequestBody AssignmentRequestDTO dto) {
-        return ResponseEntity.ok(assignmentService.updateAssignment(id, dto));
+    public ResponseEntity<AssignmentResponseDTO> updateAssignment(
+            @PathVariable Long id, @Valid @RequestBody AssignmentRequestDTO dto, Authentication authentication) {
+        return ResponseEntity.ok(assignmentService.updateAssignment(id, dto, authentication));
     }
 
     @PreAuthorize("hasAnyRole('ADMIN', 'TEACHER')")
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteAssignment(@PathVariable Long id) {
-        assignmentService.deleteAssignment(id);
+    public ResponseEntity<Void> deleteAssignment(@PathVariable Long id, Authentication authentication) {
+        assignmentService.deleteAssignment(id, authentication);
         return ResponseEntity.noContent().build();
     }
 }

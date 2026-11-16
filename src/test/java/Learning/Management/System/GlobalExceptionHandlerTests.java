@@ -1,6 +1,7 @@
 package Learning.Management.System;
 
 import Learning.Management.System.exceptions.GlobalExceptionHandler;
+import Learning.Management.System.exceptions.StorageFileNotFoundException;
 import jakarta.persistence.EntityNotFoundException;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpStatus;
@@ -18,6 +19,15 @@ class GlobalExceptionHandlerTests {
     void missingEntitiesReturnNotFound() {
         ResponseEntity<Map<String, Object>> response =
                 handler.handleEntityNotFound(new EntityNotFoundException("Course not found"));
+
+        assertEquals(HttpStatus.NOT_FOUND, response.getStatusCode());
+        assertEquals(404, response.getBody().get("status"));
+    }
+
+    @Test
+    void missingAttachmentsReturnNotFound() {
+        ResponseEntity<Map<String, Object>> response =
+                handler.handleStorageFileNotFound(new StorageFileNotFoundException("Attachment not found"));
 
         assertEquals(HttpStatus.NOT_FOUND, response.getStatusCode());
         assertEquals(404, response.getBody().get("status"));

@@ -6,10 +6,12 @@ import Learning.Management.System.dto.GradeRequestDTO;
 import Learning.Management.System.dto.SubmissionRequestDTO;
 import Learning.Management.System.dto.SubmissionResponseDTO;
 import Learning.Management.System.entity.Assignment;
+import Learning.Management.System.entity.Role;
 import Learning.Management.System.entity.Submission;
 import Learning.Management.System.entity.SubmissionStatus;
 import Learning.Management.System.entity.User;
 import Learning.Management.System.repository.AssignmentRepo;
+import Learning.Management.System.repository.StorageRepo;
 import Learning.Management.System.repository.SubmissionRepo;
 import Learning.Management.System.repository.UserRepo;
 import jakarta.persistence.EntityNotFoundException;
@@ -17,18 +19,54 @@ import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.core.io.Resource;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
+
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 @Service
 @RequiredArgsConstructor
 @Transactional
 public class SubmissionService {
 
+    private static final Pattern STORED_FILE_URL = Pattern.compile("^/files/([A-Za-z0-9._-]+)$");
+
     private final SubmissionRepo submissionRepo;
     private final AssignmentRepo assignmentRepo;
     private final UserRepo userRepo;
+    private final StorageRepo storageRepo;
+
+    public Page<SubmissionResponseDTO> getSubmissionsByAssignment(
+            Long assignmentId, Pageable pageable, Authentication authentication) {
+        User requester = getRequester(authentication);
+        Assignment assignment = assignmentRepo.findById(assignmentId)
+                .orElseThrow(() -> new EntityNotFoundException("Assignment not found"));
+        if (requester.getRole() != Role.ADMIN
+                && (requester.getRole() != Role.TEACHER
+                || assignment.getCourse().getTeacher() == null
+                || !assignment.getCourse().getTeacher().getId().equals(requester.getId()))) {
+            throw new AccessDeniedException("You can only view submissions for your own courses");
+        }
+        return submissionRepo.findByAssignmentIdOrderBySubmittedAtDesc(assignmentId, pageable)
+                .map(this::mapToDTO);
+    }
+
+    public DownloadedAttachment downloadAttachment(Long submissionId, Authentication authentication) {
+        Submission submission = submissionRepo.findById(submissionId)
+                .orElseThrow(() -> new EntityNotFoundException("Submission not found"));
+        requireOwnerOrStaff(submission, authentication);
+        Matcher storedFileUrl = submission.getFileUrl() == null
+                ? null
+                : STORED_FILE_URL.matcher(submission.getFileUrl());
+        if (storedFileUrl == null || !storedFileUrl.matches()) {
+            throw new EntityNotFoundException("Submission attachment not found");
+        }
+        String filename = storedFileUrl.group(1);
+        return new DownloadedAttachment(storageRepo.loadAsResource(filename), filename);
+    }
 
     public Page<SubmissionResponseDTO> getSubmissionByStudent(Long studentId, Pageable pageable, Authentication authentication) {
         User requester = getRequester(authentication);
@@ -88,12 +126,18 @@ public class SubmissionService {
     }
 
     private SubmissionResponseDTO mapToDTO(Submission submission) {
+        Matcher storedFileUrl = submission.getFileUrl() == null
+                ? null
+                : STORED_FILE_URL.matcher(submission.getFileUrl());
+        String attachmentUrl = storedFileUrl != null && storedFileUrl.matches()
+                ? "/api/submissions/" + submission.getId() + "/attachment"
+                : submission.getFileUrl();
         return SubmissionResponseDTO.builder()
                 .id(submission.getId())
                 .assignmentId(submission.getAssignment().getId())
                 .assignmentTitle(submission.getAssignment().getTitle())
                 .studentId(submission.getStudent().getId())
-                .fileUrl(submission.getFileUrl())
+                .fileUrl(attachmentUrl)
                 .studentName(submission.getStudent().getFirstName() + " "
                         + submission.getStudent().getLastName())
                 .submittedAt(submission.getSubmittedAt())
@@ -188,6 +232,8 @@ public class SubmissionService {
     }
 
     private boolean isTeacherUser(User user) {
-        return user.getRole() == Learning.Management.System.entity.Role.TEACHER;
+        return user.getRole() == Role.TEACHER;
     }
+
+    public record DownloadedAttachment(Resource resource, String filename) { }
 }

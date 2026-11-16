@@ -12,6 +12,8 @@ public interface SubmissionRepo extends JpaRepository<Submission, Long> {
 
     Page<Submission> findByStudentId(Long studentId, Pageable pageable);
 
+    Page<Submission> findByAssignmentIdOrderBySubmittedAtDesc(Long assignmentId, Pageable pageable);
+
     Page<Submission> findByStudentIdAndAssignmentCourseTeacherId(
             Long studentId, Long teacherId, Pageable pageable);
 

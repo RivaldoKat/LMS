@@ -7,10 +7,13 @@ import Learning.Management.System.service.FileStorageService;
 import Learning.Management.System.service.SubmissionService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.core.io.Resource;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.web.PageableDefault;
+import org.springframework.http.ContentDisposition;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -18,6 +21,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.nio.charset.StandardCharsets;
 import java.util.Map;
 
 @RestController
@@ -27,6 +31,16 @@ public class SubmissionController {
 
     private final SubmissionService submissionService;
     private final FileStorageService fileStorageService;
+
+    @PreAuthorize("hasAnyRole('TEACHER', 'ADMIN')")
+    @GetMapping("/assignment/{assignmentId}")
+    public ResponseEntity<Page<SubmissionResponseDTO>> getSubmissionsByAssignment(
+            @PathVariable Long assignmentId,
+            @PageableDefault(size = 10, sort = "submittedAt", direction = Sort.Direction.DESC) Pageable pageable,
+            Authentication authentication) {
+        return ResponseEntity.ok(
+                submissionService.getSubmissionsByAssignment(assignmentId, pageable, authentication));
+    }
 
     @GetMapping("student/{studentId}")
     public ResponseEntity<Page<SubmissionResponseDTO>> getSubmissionsByStudent(
@@ -47,6 +61,20 @@ public class SubmissionController {
     public ResponseEntity<SubmissionResponseDTO> getSubmissionById(
             @PathVariable Long id, Authentication authentication) {
         return ResponseEntity.ok(submissionService.getSubmissionById(id, authentication));
+    }
+
+    @GetMapping("/{id}/attachment")
+    public ResponseEntity<Resource> downloadSubmissionAttachment(
+            @PathVariable Long id, Authentication authentication) {
+        SubmissionService.DownloadedAttachment attachment =
+                submissionService.downloadAttachment(id, authentication);
+        return ResponseEntity.ok()
+                .contentType(MediaType.APPLICATION_OCTET_STREAM)
+                .header(HttpHeaders.CONTENT_DISPOSITION, ContentDisposition.attachment()
+                        .filename(attachment.filename(), StandardCharsets.UTF_8)
+                        .build().toString())
+                .header(HttpHeaders.X_CONTENT_TYPE_OPTIONS, "nosniff")
+                .body(attachment.resource());
     }
 
     @PreAuthorize("hasRole('LEARNER')")

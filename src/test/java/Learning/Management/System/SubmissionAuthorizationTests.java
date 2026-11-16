@@ -9,6 +9,7 @@ import Learning.Management.System.entity.SubmissionStatus;
 import Learning.Management.System.entity.User;
 import Learning.Management.System.repository.AssignmentRepo;
 import Learning.Management.System.repository.CourseRepo;
+import Learning.Management.System.repository.StorageRepo;
 import Learning.Management.System.repository.SubmissionRepo;
 import Learning.Management.System.repository.UserRepo;
 import org.junit.jupiter.api.BeforeEach;
@@ -19,12 +20,16 @@ import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.http.MediaType;
 import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.nio.charset.StandardCharsets;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -55,6 +60,9 @@ class SubmissionAuthorizationTests {
 
     @Autowired
     private SubmissionRepo submissionRepo;
+
+    @Autowired
+    private StorageRepo storageRepo;
 
     private User learner;
     private User otherLearner;
@@ -123,6 +131,55 @@ class SubmissionAuthorizationTests {
 
     @Test
     @WithMockUser(username = "teacher@example.test", roles = "TEACHER")
+    void teacherCanListSubmissionsForTheirAssignmentAndDownloadAttachment() throws Exception {
+        String storedFilename = storageRepo.store(new MockMultipartFile(
+                "file", "work.pdf", MediaType.APPLICATION_PDF_VALUE,
+                "learner work".getBytes(StandardCharsets.UTF_8)));
+        try {
+            Submission submission = submissionRepo.saveAndFlush(Submission.builder()
+                    .assignment(assignment)
+                    .student(learner)
+                    .fileUrl("/files/" + storedFilename)
+                    .status(SubmissionStatus.SUBMITTED)
+                    .build());
+
+            mockMvc.perform(get("/api/submissions/assignment/{assignmentId}", assignment.getId()))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.content[0].fileUrl")
+                            .value("/api/submissions/" + submission.getId() + "/attachment"));
+
+            mockMvc.perform(get("/api/submissions/{id}/attachment", submission.getId()))
+                    .andExpect(status().isOk())
+                    .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.content()
+                            .bytes("learner work".getBytes(StandardCharsets.UTF_8)));
+        } finally {
+            storageRepo.deleteFile(storedFilename);
+        }
+    }
+
+    @Test
+    @WithMockUser(username = "other-learner@example.test", roles = "LEARNER")
+    void learnerCannotDownloadAnotherStudentsAttachment() throws Exception {
+        String storedFilename = storageRepo.store(new MockMultipartFile(
+                "file", "work.pdf", MediaType.APPLICATION_PDF_VALUE,
+                "learner work".getBytes(StandardCharsets.UTF_8)));
+        try {
+            Submission submission = submissionRepo.saveAndFlush(Submission.builder()
+                    .assignment(assignment)
+                    .student(learner)
+                    .fileUrl("/files/" + storedFilename)
+                    .status(SubmissionStatus.SUBMITTED)
+                    .build());
+
+            mockMvc.perform(get("/api/submissions/{id}/attachment", submission.getId()))
+                    .andExpect(status().isForbidden());
+        } finally {
+            storageRepo.deleteFile(storedFilename);
+        }
+    }
+
+    @Test
+    @WithMockUser(username = "teacher@example.test", roles = "TEACHER")
     void teacherCannotUseAdminOnlyCourseCreation() throws Exception {
         mockMvc.perform(post("/api/courses")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -130,6 +187,39 @@ class SubmissionAuthorizationTests {
                                         + "\"term\":\"Test term\",\"schoolTerm\":\"Term1\",\"teacherId\":1}"))
                 .andExpect(status().isForbidden())
                 .andExpect(jsonPath("$.status").value(403));
+    }
+
+    @Test
+    @WithMockUser(username = "teacher@example.test", roles = "TEACHER")
+    void teacherCannotMoveOrDeleteAnotherTeachersAssignment() throws Exception {
+        User otherTeacher = saveUser("other-teacher@example.test", Role.TEACHER);
+        Course otherCourse = courseRepo.save(Course.builder()
+                .name("Other course")
+                .code("OTHER-101")
+                .term("Test term")
+                .schoolTerm(SchoolTerm.Term1)
+                .teacher(otherTeacher)
+                .build());
+        Assignment otherAssignment = assignmentRepo.save(Assignment.builder()
+                .course(otherCourse)
+                .title("Other assignment")
+                .description("Test")
+                .dueDate(LocalDateTime.now().plusDays(1))
+                .maxScore(100.0)
+                .build());
+
+        mockMvc.perform(put("/api/assignments/{id}", assignment.getId())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"courseId\":" + otherCourse.getId()
+                                + ",\"title\":\"Moved\",\"description\":\"Test\","
+                                + "\"dueDate\":\"2030-01-01T00:00:00\",\"maxScore\":100}"))
+                .andExpect(status().isForbidden());
+
+        mockMvc.perform(delete("/api/assignments/{id}", otherAssignment.getId()))
+                .andExpect(status().isForbidden());
+
+        mockMvc.perform(get("/api/submissions/assignment/{assignmentId}", otherAssignment.getId()))
+                .andExpect(status().isForbidden());
     }
 
     private User saveUser(String email, Role role) {
