@@ -148,15 +148,16 @@ public class QuizService {
         quiz.getQuestions().forEach(question -> expectedQuestionIds.add(question.getId()));
         Set<Long> answeredQuestionIds = new HashSet<>();
         Map<Long, QuizAnswerRequestDTO> answersByQuestion = new java.util.HashMap<>();
-        for (QuizAnswerRequestDTO answer : dto.getAnswers()) {
+        List<QuizAnswerRequestDTO> answers = dto.getAnswers() == null ? List.of() : dto.getAnswers();
+        for (QuizAnswerRequestDTO answer : answers) {
+            if (answer == null) {
+                continue;
+            }
             if (!expectedQuestionIds.contains(answer.getQuestionId())
                     || !answeredQuestionIds.add(answer.getQuestionId())) {
                 throw new IllegalArgumentException("Quiz answers must contain each quiz question exactly once");
             }
             answersByQuestion.put(answer.getQuestionId(), answer);
-        }
-        if (!dto.isTimedOut() && !answeredQuestionIds.equals(expectedQuestionIds)) {
-            throw new IllegalArgumentException("Please answer every question before submitting");
         }
 
         double autoGradedPoints = 0;
@@ -164,17 +165,13 @@ public class QuizService {
         for (QuizQuestion question : quiz.getQuestions()) {
             QuizAnswerRequestDTO answer = answersByQuestion.get(question.getId());
             if (answer == null) {
-                if (!dto.isTimedOut()) {
-                    throw new IllegalArgumentException("Please answer every question before submitting");
-                }
                 if (question.getQuestionType() == QuizQuestionType.WRITTEN) {
                     hasWrittenQuestions = true;
                 }
                 continue;
             }
             if (question.getQuestionType() == QuizQuestionType.MULTIPLE_CHOICE) {
-                if ((!dto.isTimedOut() && answer.getSelectedOptionId() == null)
-                        || hasText(answer.getResponseText())) {
+                if (hasText(answer.getResponseText())) {
                     throw new IllegalArgumentException("Select one option for each multiple-choice question");
                 }
                 if (answer.getSelectedOptionId() != null) {
@@ -189,8 +186,7 @@ public class QuizService {
                     autoGradedPoints += question.getMaxPoints();
                 }
             } else {
-                if (answer.getSelectedOptionId() != null
-                        || !dto.isTimedOut() && !hasText(answer.getResponseText())) {
+                if (answer.getSelectedOptionId() != null) {
                     throw new IllegalArgumentException("Enter a written response for each written question");
                 }
                 hasWrittenQuestions = true;
