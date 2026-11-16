@@ -73,7 +73,7 @@ public class SubmissionController {
                 .header(HttpHeaders.CONTENT_DISPOSITION, ContentDisposition.attachment()
                         .filename(attachment.filename(), StandardCharsets.UTF_8)
                         .build().toString())
-                .header(HttpHeaders.X_CONTENT_TYPE_OPTIONS, "nosniff")
+                .header("X-Content-Type-Options", "nosniff")
                 .body(attachment.resource());
     }
 
